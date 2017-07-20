@@ -1,1 +1,1 @@
-To install bash-completion - fire ". gohan_path/tools/bash_completion"
+To install bash-completion - fire ". gohan_path/tools/bash_completion" and ". gohan_path/tools/gohan_client_bash_completion.sh"
