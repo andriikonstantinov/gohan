@@ -15,8 +15,8 @@ _gohan="${_gohan//$_replacewhat/$_replacewith}"
 getUn_namedProperties()
 {
 replaceTilde
-schema_id=$1
-_un_named="$(${COMP_WORDS[0]} client "$schema_id" list |
+_schema_id=$1
+_un_named="$(${COMP_WORDS[0]} client "$_schema_id" list |
     grep -v -e '+-\++' -e '^[[:space:]]*$' |
     awk -v col='ID' -F '|' 'NR==1 { for (i=1; i<=NF; i++) if ($i ~ " *" col " *") { c=i; break } } NR>1 { print $c }')"
 }
@@ -26,9 +26,9 @@ getProperties()
 replaceTilde
 _named="--output-format --verbosity --fields"
 _fields=""
-schema_id=$1
+_schema_id=$1
 OIFS=$IFS
-IFS=$'\n' arr=`$_gohan client $schema_id`
+IFS=$'\n' arr=`$_gohan client $_schema_id`
 _wasProperties=0
 for a in $arr
 do
@@ -99,8 +99,8 @@ elif [[ "${COMP_CWORD}" -eq $((_gohanCommandPos+2)) ]] ; then
 	COMPREPLY=( $(compgen -W "${_clientCommands}" -- ${cur}) )
 	return 0
 elif [[ "${COMP_CWORD}" -gt $((_gohanCommandPos+2)) ]] && [[ c -eq 1 ]] &&  [[ "${cur}" == -* ]] ; then
-	schema_id="${COMP_WORDS[$((_gohanCommandPos+1))]}"
-	getProperties $schema_id
+	_schema_id="${COMP_WORDS[$((_gohanCommandPos+1))]}"
+	getProperties $_schema_id
 	IFS=$OIFS
 	COMPREPLY=( $(compgen -W "${_named}" -- ${cur} ) )
 	return 0
