@@ -7,9 +7,9 @@ _gohanCommandPos=1
 __un_namedCommandWords="show set delete"
 getUn_namedProperties()
 {
-schema_id=$1
+_schema_id=$1
 OIFS=$IFS
-IFS=$'\n' arr=`${COMP_WORDS[0]} client $schema_id list`
+IFS=$'\n' arr=`${COMP_WORDS[0]} client $_schema_id list`
 _wasProperties=0
 _counter=0
 _un_named=""
@@ -45,9 +45,9 @@ getProperties()
 {
 _named="--output-format --verbosity --fields"
 _fields=""
-schema_id=$1
+_schema_id=$1
 OIFS=$IFS
-IFS=$'\n' arr=`${COMP_WORDS[0]} client $schema_id`
+IFS=$'\n' arr=`${COMP_WORDS[0]} client $_schema_id`
 _wasProperties=0
 for a in $arr
 do
@@ -111,9 +111,6 @@ _exitCode=$?;
 if [[ _exitCode -ne 0 ]]; then
     return 0;
 fi
-if [[ `${COMP_WORDS[0]} client` == "Environment variable GOHAN_SERVICE_NAME needs to be set" ]] ; then
-    return 0
-fi
 if [[ "${COMP_CWORD}" -eq $((_gohanCommandPos+1)) ]] ; then
 	getAllSchemas
     COMPREPLY=( $(compgen -W "${_schemas}" -- ${_cur}) )
@@ -122,8 +119,8 @@ elif [[ "${COMP_CWORD}" -eq $((_gohanCommandPos+2)) ]] ; then
 	COMPREPLY=( $(compgen -W "${_commands}" -- ${_cur}) )
 	return 0
 elif [[ "${COMP_CWORD}" -gt $((_gohanCommandPos+2)) ]] && [[ _c -eq 1 ]] &&  [[ "${_cur}" == -* ]] ; then
-	schema_id="${COMP_WORDS[$((_gohanCommandPos+1))]}"
-	getProperties $schema_id
+	_schema_id="${COMP_WORDS[$((_gohanCommandPos+1))]}"
+	getProperties $_schema_id
 	IFS=$OIFS
 	COMPREPLY=( $(compgen -W "${_named}" -- ${_cur} ) )
 	return 0
