@@ -1,41 +1,40 @@
 #!/bin/bash
 
-
-commands="list show create set delete"
-verbosity="0 1 2"
-outputFormat="json table"
-gohanCommandPos=1
-unnamedCommandWords="show set delete"
-getUnnamedProperties()
+_commands="list show create set delete"
+_verbosity="0 1 2"
+_outputFormat="json table"
+_gohanCommandPos=1
+__un_namedCommandWords="show set delete"
+getUn_namedProperties()
 {
 schema_id=$1
 OIFS=$IFS
 IFS=$'\n' arr=`${COMP_WORDS[0]} client $schema_id list`
-wasProperties=0
-counter=0
-unnamed=""
+_wasProperties=0
+_counter=0
+_un_named=""
 for a in $arr
 do
-        cop=$a
-        replacewhat="-"
-        replacewith=""
-        replacewhat2="+"
-        result="${cop//$replacewhat/$replacewith}"
-        result="${result//$replacewhat2/$replacewith}"
-        let counter=counter+1
-        if [  -z $result ] ; then
+        _cop=$a
+        _replacewhat="-"
+        _replacewith=""
+        _replacewhat2="+"
+        _result="${_cop//$_replacewhat/$_replacewith}"
+        _result="${_result//$_replacewhat2/$_replacewith}"
+        let _counter=_counter+1
+        if [  -z $_result ] ; then
         continue
         fi
-        if [[ $counter -gt 2 ]];then
-        args=$(echo $a | tr "|" "\n")
-        sub=0
-        for i in $args
+        if [[ $_counter -gt 2 ]];then
+        _args=$(echo $a | tr "|" "\n")
+        _sub=0
+        for i in $_args
         do
 
-            let sub=sub+1
-            if [ $sub -eq 1 ] && [ ! -z "${i// }" ] ; then
+            let _sub=_sub+1
+            if [ $_sub -eq 1 ] && [ ! -z "${i// }" ] ; then
         		i="$(echo -e "${i}" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
-                unnamed="$i $unnamed"	
+                _un_named="$i $_un_named"
             fi
         done
         fi
@@ -44,28 +43,28 @@ done
 
 getProperties()
 {
-named="--output-format --verbosity --fields"
-fields=""
+_named="--output-format --verbosity --fields"
+_fields=""
 schema_id=$1
 OIFS=$IFS
 IFS=$'\n' arr=`${COMP_WORDS[0]} client $schema_id`
-wasProperties=0
+_wasProperties=0
 for a in $arr
 do
-     if [[ wasProperties -eq 1 ]] ; then
-         curvar=`echo $a | awk '{print $2}'`
-         if [[ -z "${curvar// }" ]] ; then
+     if [[ _wasProperties -eq 1 ]] ; then
+         __curvar=`echo $a | awk '{print $2}'`
+         if [[ -z "${__curvar// }" ]] ; then
              return
          else
-             curvar="$(echo -e "${curvar}" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
-             named="$named --$curvar"
-             fields="$fields $curvar"
+             __curvar="$(echo -e "${__curvar}" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
+             _named="$_named --$__curvar"
+             _fields="$_fields $__curvar"
         fi
      fi
      if [[ $a == *"Properties:"* ]] ; then
-         wasProperties=1
+         _wasProperties=1
      elif [[ -z "${a// }" ]] ; then
-         wasProperties=0
+         _wasProperties=0
      fi
 done
 }
@@ -74,78 +73,84 @@ getAllSchemas()
 {
 OIFS=$IFS
 IFS=$'\n'
-array=`${COMP_WORDS[0]} client`
-schemasArr=()
-schemas=""
-for curLine in $array
+_array=`${COMP_WORDS[0]} client`
+_schemasArr=()
+_schemas=""
+for _curLine in $_array
 do
-	IFS='#' read -r -a arr <<< "$curLine"
-	curSchema_id=`echo $arr | cut -d " " -f 3`
-	schemasArr+=("$curSchema_id")
+	IFS='#' read -r -a arr <<< "$_curLine"
+	_curSchema_id=`echo $arr | cut -d " " -f 3`
+	_schemasArr+=("$_curSchema_id")
 done
 
-for i in "${schemasArr[@]}"
+for i in "${_schemasArr[@]}"
 do
     i="$(echo -e "${i}" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
-	schemas="$schemas $i"
+	_schemas="$_schemas $i"
 done
 IFS=$OIFS
 }
 
 bashCompletion()
 {
-local cur prev opts
+local _cur _prev opts
 COMPREPLY=()
-cur="${COMP_WORDS[COMP_CWORD]}"
-prev="${COMP_WORDS[COMP_CWORD-1]}"
-c=" "
-let "c=(${COMP_CWORD}+$gohanCommandPos) % 2"
-if [[ "${COMP_CWORD}" -lt $((gohanCommandPos+1)) ]] ; then
+_cur="${COMP_WORDS[COMP_CWORD]}"
+_prev="${COMP_WORDS[COMP_CWORD-1]}"
+_c=" "
+let "_c=(${COMP_CWORD}+$_gohanCommandPos) % 2"
+if [[ "${COMP_CWORD}" -lt $((_gohanCommandPos+1)) ]] ; then
     return 0
 fi
 if [[ "${COMP_WORDS[0]}" != "gohan" ]] &&  [[ "${COMP_WORDS[1]}" != "client" ]] ; then
     return 0
 fi
+_execOperation="${COMP_WORDS[0]} client";
+$_execOperation &> /dev/null;
+_exitCode=$?;
+if [[ _exitCode -ne 0 ]]; then
+    return 0;
+fi
 if [[ `${COMP_WORDS[0]} client` == "Environment variable GOHAN_SERVICE_NAME needs to be set" ]] ; then
     return 0
 fi
-if [[ "${COMP_CWORD}" -eq $((gohanCommandPos+1)) ]] ; then
+if [[ "${COMP_CWORD}" -eq $((_gohanCommandPos+1)) ]] ; then
 	getAllSchemas
-    COMPREPLY=( $(compgen -W "${schemas}" -- ${cur}) )
+    COMPREPLY=( $(compgen -W "${_schemas}" -- ${_cur}) )
      return 0
-elif [[ "${COMP_CWORD}" -eq $((gohanCommandPos+2)) ]] ; then
-	COMPREPLY=( $(compgen -W "${commands}" -- ${cur}) )
+elif [[ "${COMP_CWORD}" -eq $((_gohanCommandPos+2)) ]] ; then
+	COMPREPLY=( $(compgen -W "${_commands}" -- ${_cur}) )
 	return 0
-elif [[ "${COMP_CWORD}" -gt $((gohanCommandPos+2)) ]] && [[ c -eq 1 ]] &&  [[ "${cur}" == -* ]] ; then
-	schema_id="${COMP_WORDS[$((gohanCommandPos+1))]}"
+elif [[ "${COMP_CWORD}" -gt $((_gohanCommandPos+2)) ]] && [[ _c -eq 1 ]] &&  [[ "${_cur}" == -* ]] ; then
+	schema_id="${COMP_WORDS[$((_gohanCommandPos+1))]}"
 	getProperties $schema_id
 	IFS=$OIFS
-	COMPREPLY=( $(compgen -W "${named}" -- ${cur} ) )
+	COMPREPLY=( $(compgen -W "${_named}" -- ${_cur} ) )
 	return 0
-elif [[ "${COMP_CWORD}" -gt $((gohanCommandPos+2)) ]] && [[ c -eq 1 ]] && [[ "${cur}" != -* ]] ; then
-    toShow=0
-    curCommand="${COMP_WORDS[3]}"
-    [[ $unnamedCommandWords =~ (^|[[:space:]])$curCommand($|[[:space:]]) ]] && toShow=1 || toShow=0
-    if [[ $toShow == 0 ]]; then
+elif [[ "${COMP_CWORD}" -gt $((_gohanCommandPos+2)) ]] && [[ _c -eq 1 ]] && [[ "${_cur}" != -* ]] ; then
+    _toShow=0
+    _curCommand="${COMP_WORDS[3]}"
+    [[ $__un_namedCommandWords =~ (^|[[:space:]])$_curCommand($|[[:space:]]) ]] && _toShow=1 || _toShow=0
+    if [[ $_toShow == 0 ]]; then
         return 0
     fi
-	device="${COMP_WORDS[$((gohanCommandPos+1))]}"
-	getUnnamedProperties $device 
+	_device="${COMP_WORDS[$((_gohanCommandPos+1))]}"
+	getUn_namedProperties $_device
 	IFS=$OIFS
-	COMPREPLY=( $(compgen -W "${unnamed}" -- ${cur}) )
+	COMPREPLY=( $(compgen -W "${_un_named}" -- ${_cur}) )
 	return 0
-elif [[ "${COMP_CWORD}" -gt $((gohanCommandPos+2)) ]] && [[ c -eq 0 ]] && [[ "${prev}" == "--fields" ]] ; then
-	getProperties "${COMP_WORDS[$((gohanCommandPos+1))]}"
+elif [[ "${COMP_CWORD}" -gt $((_gohanCommandPos+2)) ]] && [[ _c -eq 0 ]] && [[ "${_prev}" == "--fields" ]] ; then
+	getProperties "${COMP_WORDS[$((_gohanCommandPos+1))]}"
     IFS=$OIFS
-    COMPREPLY=( $(compgen -W "${fields}" -- ${cur}) )
+    COMPREPLY=( $(compgen -W "${_fields}" -- ${_cur}) )
     return 0
-elif [[ "${COMP_CWORD}" -gt $((gohanCommandPos+2)) ]] && [[ c -eq 0 ]] && [[ "${prev}" == "--verbosity" ]] ; then
-    COMPREPLY=( $(compgen -W "${verbosity}" -- ${cur}) )
+elif [[ "${COMP_CWORD}" -gt $((_gohanCommandPos+2)) ]] && [[ _c -eq 0 ]] && [[ "${_prev}" == "--verbosity" ]] ; then
+    COMPREPLY=( $(compgen -W "${_verbosity}" -- ${_cur}) )
     return 0
-elif [[ "${COMP_CWORD}" -gt $((gohanCommandPos+2)) ]] && [[ c -eq 0 ]] && [[ "${prev}" == "--output-format" ]] ; then
-    COMPREPLY=( $(compgen -W "${outputFormat}" -- ${cur}) )
+elif [[ "${COMP_CWORD}" -gt $((_gohanCommandPos+2)) ]] && [[ _c -eq 0 ]] && [[ "${_prev}" == "--output-format" ]] ; then
+    COMPREPLY=( $(compgen -W "${_outputFormat}" -- ${_cur}) )
     return 0
 
 fi
 }
-complete -F bashCompletion gohan client 
+complete -F bashCompletion gohan client

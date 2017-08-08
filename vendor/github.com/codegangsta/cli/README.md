@@ -295,7 +295,7 @@ setting the `PROG` variable to the name of your program:
 
 Copy and modify `autocomplete/bash_autocomplete` to use your program name
 rather than `$PROG` and have the user copy the file into
-`/etc/bash_completion.d/` (or automatically install it there if you are
+`/etc/bash_completion.sh.d/` (or automatically install it there if you are
 distributing a package). Alternatively you can just document that users should
 source the generic `autocomplete/bash_autocomplete` with `$PROG` set to your
 program name in their bash configuration.
