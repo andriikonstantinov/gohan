@@ -185,7 +185,7 @@ func convertNilsToNulls(object interface{}) {
 }
 
 //HandleEvent handles event
-func (env *Environment) HandleEvent(event string, context map[string]interface{}) (err error) {
+func (env *Environment) HandleEvent(event string, context map[string]interface{}, traceID string) (err error) {
 	vm := env.VM
 	var closeNotifier http.CloseNotifier
 	var closeNotify <-chan bool
@@ -260,7 +260,7 @@ func (env *Environment) HandleEvent(event string, context map[string]interface{}
 			log.Warning(err.Error())
 		}
 	}()
-	_, err = vm.Call("gohan_handle_event", nil, event, contextInVM)
+	_, err = vm.Call("gohan_handle_event", nil, event, contextInVM, traceID)
 	for key, value := range context {
 		context[key] = ConvertOttoToGo(value)
 	}

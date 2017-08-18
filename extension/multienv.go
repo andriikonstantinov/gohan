@@ -51,9 +51,9 @@ func (env *MultiEnvironment) LoadExtensionsForPath(extensions []*schema.Extensio
 }
 
 //HandleEvent handles event
-func (env *MultiEnvironment) HandleEvent(event string, context map[string]interface{}) error {
+func (env *MultiEnvironment) HandleEvent(event string, context map[string]interface{}, traceID string) error {
 	for _, env := range env.childEnv {
-		err := env.HandleEvent(event, context)
+		err := env.HandleEvent(event, context, traceID)
 		if err != nil {
 			return err
 		}

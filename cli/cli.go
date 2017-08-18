@@ -45,6 +45,7 @@ import (
 	"github.com/cloudwan/gohan/util"
 	"github.com/codegangsta/cli"
 	"github.com/lestrrat/go-server-starter"
+	"github.com/twinj/uuid"
 )
 
 var log = l.NewLogger()
@@ -450,6 +451,7 @@ func getMigrateSubcommandWithPostMigrateEvent(subcmd, usage string) cli.Command 
 			cli.BoolFlag{Name: SyncEtcdEventFlag, Usage: "Enable if ETCD events should be synchronized after migration"},
 		},
 		Action: func(context *cli.Context) {
+			traceID := uuid.NewV4().String()
 			configFile := context.String(ConfigFileFlag)
 			if migration.LoadConfig(configFile) != nil {
 				return
@@ -468,15 +470,15 @@ func getMigrateSubcommandWithPostMigrateEvent(subcmd, usage string) cli.Command 
 			modifiedSchemas := migration.GetModifiedSchemas()
 
 			if len(modifiedSchemas) == 0 {
-				log.Info("No modified schemas, skipping post-migration event")
+				log.Info("[%s] No modified schemas, skipping post-migration event", traceID)
 				return
 			}
 
-			log.Debug("Modified schemas: %s", modifiedSchemas)
+			log.Debug("[%s] Modified schemas: %s", traceID, modifiedSchemas)
 
 			schemaFiles := config.GetStringList("schemas", nil)
 			if schemaFiles == nil {
-				log.Fatal("No schema specified in configuraion")
+				log.Fatal("[%s] No schema specified in configuraion", traceID)
 			}
 
 			manager := schema.GetManager()
@@ -513,9 +515,9 @@ func getMigrateSubcommandWithPostMigrateEvent(subcmd, usage string) cli.Command 
 					eventTimeout := context.Duration(PostMigrationEventTimeoutFlag)
 					env.SetEventTimeLimit(PostMigrationEvent, eventTimeout)
 					env.LoadExtensionsForPath(manager.Extensions, manager.TimeLimit, manager.TimeLimits, pluralURL)
-					log.Info("Loading environment for %s schema with URL: %s", s.ID, pluralURL)
+					log.Info("[%s] Loading environment for %s schema with URL: %s", traceID, s.ID, pluralURL)
 					if err != nil {
-						log.Fatal(fmt.Sprintf("[%s] %v", pluralURL, err))
+						log.Fatal(fmt.Sprintf("[%s] [%s] %v", traceID, pluralURL, err))
 					}
 					environmentManager.RegisterEnvironment(s.ID, env)
 				}
@@ -526,9 +528,9 @@ func getMigrateSubcommandWithPostMigrateEvent(subcmd, usage string) cli.Command 
 				eventContext["sync"] = sync
 				eventContext["db"] = dbConn
 				eventContext["identity_service"] = identity
-				err := env.HandleEvent(PostMigrationEvent, eventContext)
+				err := env.HandleEvent(PostMigrationEvent, eventContext, traceID)
 				if err != nil {
-					log.Fatalf("Failed to handle event post-migration, err: %s", err)
+					log.Fatalf("[%s] Failed to handle event post-migration, err: %s", traceID, err)
 				}
 			}
 
@@ -540,7 +542,7 @@ func getMigrateSubcommandWithPostMigrateEvent(subcmd, usage string) cli.Command 
 			syncWriter := server.NewSyncWriter(sync, dbConn)
 			_, err = syncWriter.Sync()
 			if err != nil {
-				log.Fatalf("Failed to synchronize post-migration events, err: %s", err)
+				log.Fatalf("[%s] Failed to synchronize post-migration events, err: %s", traceID, err)
 			}
 		},
 	}
