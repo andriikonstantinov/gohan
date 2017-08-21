@@ -29,7 +29,6 @@ import (
 	"github.com/cloudwan/gohan/schema"
 	"github.com/cloudwan/gohan/server/middleware"
 	gohan_sync "github.com/cloudwan/gohan/sync"
-	"github.com/twinj/uuid"
 )
 
 const (
@@ -149,18 +148,17 @@ func (watcher *StateWatcher) processEvent(event *gohan_sync.Event) {
 //StateUpdate updates the state in the db based on the sync event
 // todo: make private once tests are fixed
 func (watcher *StateWatcher) StateUpdate(event *gohan_sync.Event) error {
-	traceID := uuid.NewV4().String()
 	schemaPath := strings.TrimPrefix(event.Key, statePrefix)
 	var curSchema = schema.GetSchemaByPath(schemaPath)
 	if curSchema == nil || !curSchema.StateVersioning() {
-		log.Debug("[%s] State update on unexpected path '%s'", traceID, schemaPath)
+		log.Debug("State update on unexpected path '%s'", schemaPath)
 		return nil
 	}
 
 	defer watcher.measureStateUpdateTime(time.Now(), "state_update", curSchema.ID)
 
 	resourceID := curSchema.GetResourceIDFromPath(schemaPath)
-	log.Info("[%s] Started StateUpdate for %s %s %v", traceID, event.Action, event.Key, event.Data)
+	log.Info("Started StateUpdate for %s %s %v", event.Action, event.Key, event.Data)
 
 	return db.WithinTx(context.Background(), watcher.db, &transaction.TxOptions{IsolationLevel: transaction.GetIsolationLevel(curSchema, StateUpdateEventName)},
 		func(tx transaction.Transaction) error {
@@ -209,7 +207,7 @@ func (watcher *StateWatcher) StateUpdate(event *gohan_sync.Event) error {
 				context["config_version"] = resourceState.ConfigVersion
 				context["transaction"] = tx
 
-				if err := extension.HandleEvent(context, environment, "pre_state_update_in_transaction", curSchema.ID, traceID); err != nil {
+				if err := extension.HandleEvent(context, environment, "pre_state_update_in_transaction", curSchema.ID); err != nil {
 					return err
 				}
 			}
@@ -220,7 +218,7 @@ func (watcher *StateWatcher) StateUpdate(event *gohan_sync.Event) error {
 			}
 
 			if haveEnvironment {
-				if err := extension.HandleEvent(context, environment, "post_state_update_in_transaction", curSchema.ID, traceID); err != nil {
+				if err := extension.HandleEvent(context, environment, "post_state_update_in_transaction", curSchema.ID); err != nil {
 					return err
 				}
 			}
@@ -232,17 +230,16 @@ func (watcher *StateWatcher) StateUpdate(event *gohan_sync.Event) error {
 //MonitoringUpdate updates the state in the db based on the sync event
 // todo: make private once tests are fixed
 func (watcher *StateWatcher) MonitoringUpdate(event *gohan_sync.Event) error {
-	traceID := uuid.NewV4().String()
 	schemaPath := strings.TrimPrefix(event.Key, monitoringPrefix)
 	var curSchema = schema.GetSchemaByPath(schemaPath)
 	if curSchema == nil || !curSchema.StateVersioning() {
-		log.Debug("[%s] Monitoring update on unexpected path '%s'", traceID, schemaPath)
+		log.Debug("Monitoring update on unexpected path '%s'", schemaPath)
 		return nil
 	}
 	defer watcher.measureStateUpdateTime(time.Now(), "monitoring_update", curSchema.ID)
 
 	resourceID := curSchema.GetResourceIDFromPath(schemaPath)
-	log.Info("[%s] Started MonitoringUpdate for %s %s %v", traceID, event.Action, event.Key, event.Data)
+	log.Info("Started MonitoringUpdate for %s %s %v", event.Action, event.Key, event.Data)
 
 	return db.WithinTx(context.Background(), watcher.db, &transaction.TxOptions{IsolationLevel: transaction.GetIsolationLevel(curSchema, MonitoringUpdateEventName)},
 		func(tx transaction.Transaction) error {
@@ -256,8 +253,8 @@ func (watcher *StateWatcher) MonitoringUpdate(event *gohan_sync.Event) error {
 			}
 
 			if resourceState.ConfigVersion != resourceState.StateVersion {
-				log.Debug("[%s] Skipping MonitoringUpdate, because config version (%d) != state version (%d)",
-					traceID, resourceState.ConfigVersion, resourceState.StateVersion)
+				log.Debug("Skipping MonitoringUpdate, because config version (%d) != state version (%d)",
+					resourceState.ConfigVersion, resourceState.StateVersion)
 				return nil
 			}
 			var ok bool
@@ -266,8 +263,8 @@ func (watcher *StateWatcher) MonitoringUpdate(event *gohan_sync.Event) error {
 				return fmt.Errorf("No version in monitoring information")
 			}
 			if resourceState.ConfigVersion != int64(monitoringVersion) {
-				log.Debug("[%s] Dropping MonitoringUpdate, because config version (%d) != input monitoring version (%d)",
-					traceID, resourceState.ConfigVersion, monitoringVersion)
+				log.Debug("Dropping MonitoringUpdate, because config version (%d) != input monitoring version (%d)",
+					resourceState.ConfigVersion, monitoringVersion)
 				return nil
 			}
 			resourceState.Monitoring, ok = event.Data["monitoring"].(string)
@@ -284,7 +281,7 @@ func (watcher *StateWatcher) MonitoringUpdate(event *gohan_sync.Event) error {
 			context["transaction"] = tx
 
 			if haveEnvironment {
-				if err := extension.HandleEvent(context, environment, "pre_monitoring_update_in_transaction", curSchema.ID, traceID); err != nil {
+				if err := extension.HandleEvent(context, environment, "pre_monitoring_update_in_transaction", curSchema.ID); err != nil {
 					return err
 				}
 			}
@@ -295,7 +292,7 @@ func (watcher *StateWatcher) MonitoringUpdate(event *gohan_sync.Event) error {
 			}
 
 			if haveEnvironment {
-				if err := extension.HandleEvent(context, environment, "post_monitoring_update_in_transaction", curSchema.ID, traceID); err != nil {
+				if err := extension.HandleEvent(context, environment, "post_monitoring_update_in_transaction", curSchema.ID); err != nil {
 					return err
 				}
 			}

@@ -46,8 +46,7 @@ func startAMQPProcess(server *Server) {
 func listenAMQP(server *Server) {
 
 	hostname, _ := os.Hostname()
-	traceID := uuid.NewV4().String()
-	processID := hostname + traceID
+	processID := hostname + uuid.NewV4().String()
 	config := util.GetConfig()
 	connection := config.GetString("amqp/connection", "amqp://guest:guest@127.0.0.1:5672/")
 	queues := config.GetStringList("amqp/queues", []string{"notifications.info", "notifications.error"})
@@ -128,7 +127,7 @@ func listenAMQP(server *Server) {
 								context := map[string]interface{}{
 									"event": message,
 								}
-								if err := env.HandleEvent("notification", context, traceID); err != nil {
+								if err := env.HandleEvent("notification", context); err != nil {
 									log.Warning(fmt.Sprintf("extension error: %s", err))
 								}
 							}

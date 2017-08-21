@@ -23,13 +23,11 @@ import (
 
 	l "github.com/cloudwan/gohan/log"
 	"github.com/cloudwan/gohan/util"
-	"github.com/twinj/uuid"
 )
 
 //SNMP Process
 //Experimental
 func startSNMPProcess(server *Server) {
-	traceID := uuid.NewV4().String()
 	config := util.GetConfig()
 	enabled := config.GetParam("snmp", nil)
 	if enabled == nil {
@@ -60,12 +58,12 @@ func startSNMPProcess(server *Server) {
 		for server.running {
 			rlen, remote, err := conn.ReadFromUDP(buf)
 			if err != nil {
-				log.Error(fmt.Sprintf("[%s] [SNMP] failed read bytes %s", traceID, err))
+				log.Error(fmt.Sprintf("[SNMP] failed read bytes %s", err))
 				return
 			}
 			decoded, err := wapsnmp.DecodeSequence(buf[:rlen])
 			if err != nil {
-				log.Error(fmt.Sprintf("[%s] [SNMP] failed decode bytes %s", traceID, err))
+				log.Error(fmt.Sprintf("[SNMP] failed decode bytes %s", err))
 				continue
 			}
 			infos := decoded[3].([]interface{})[4].([]interface{})[1:]
@@ -80,7 +78,7 @@ func startSNMPProcess(server *Server) {
 				"trap":   trap,
 				"remote": remote,
 			}
-			if err := env.HandleEvent("notification", context, traceID); err != nil {
+			if err := env.HandleEvent("notification", context); err != nil {
 				log.Warning(fmt.Sprintf("extension error: %s", err))
 			}
 		}

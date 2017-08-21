@@ -34,13 +34,11 @@ var _ = Describe("Gohanscript extension manager", func() {
 	var (
 		timeLimit  time.Duration
 		timeLimits []*schema.PathEventTimeLimit
-		traceID    string
 	)
 
 	BeforeEach(func() {
 		timeLimit = time.Duration(10) * time.Second
 		timeLimits = []*schema.PathEventTimeLimit{}
-		traceID = "1234-5678-90AB-CDEF"
 	})
 
 	AfterEach(func() {
@@ -79,7 +77,7 @@ var _ = Describe("Gohanscript extension manager", func() {
 				context := map[string]interface{}{
 					"id": "test",
 				}
-				Expect(env.HandleEvent("test_event", context, traceID)).To(Succeed())
+				Expect(env.HandleEvent("test_event", context)).To(Succeed())
 				Expect(context["person"]).ToNot(BeNil())
 			})
 		})
@@ -99,7 +97,7 @@ var _ = Describe("Gohanscript extension manager", func() {
 				context := map[string]interface{}{
 					"id": "test",
 				}
-				Expect(env.HandleEvent("test_event", context, traceID)).To(Succeed())
+				Expect(env.HandleEvent("test_event", context)).To(Succeed())
 				Expect(context["person"]).ToNot(BeNil())
 			})
 		})
@@ -128,7 +126,7 @@ var _ = Describe("Gohanscript extension manager", func() {
 				context := map[string]interface{}{
 					"id": "test",
 				}
-				Expect(env.HandleEvent("test_event", context, traceID)).To(Succeed())
+				Expect(env.HandleEvent("test_event", context)).To(Succeed())
 				Expect(context["person"]).ToNot(BeNil())
 				server.Close()
 			})
@@ -155,7 +153,7 @@ var _ = Describe("Gohanscript extension manager", func() {
 				context := map[string]interface{}{
 					"id": "test",
 				}
-				Expect(env.HandleEvent("test_event", context, traceID)).ToNot(Succeed())
+				Expect(env.HandleEvent("test_event", context)).ToNot(Succeed())
 			})
 		})
 	})

@@ -34,7 +34,6 @@ var _ = Describe("Environment", func() {
 
 	const (
 		SCHEMA_PATH = "test_data/test_schema.yaml"
-		traceID = "1234-5678-90AB-CDEF"
 	)
 
 	BeforeEach(func() {
@@ -158,12 +157,12 @@ var _ = Describe("Environment", func() {
 			env.RegisterEventHandler("some_event", someEventHandler, goext.PriorityDefault)
 			env.RegisterEventHandler("some_other_event", someOtherEventHandler, goext.PriorityDefault)
 
-			Expect(env.HandleEvent("some_event", make(map[string]interface{}), traceID)).To(Succeed())
+			Expect(env.HandleEvent("some_event", make(map[string]interface{}))).To(Succeed())
 
 			Expect(someEventRunCount).To(Equal(1))
 			Expect(someOtherEventRunCount).To(Equal(0))
 
-			Expect(env.HandleEvent("some_other_event", make(map[string]interface{}), traceID)).To(Succeed())
+			Expect(env.HandleEvent("some_other_event", make(map[string]interface{}))).To(Succeed())
 
 			Expect(someEventRunCount).To(Equal(1))
 			Expect(someOtherEventRunCount).To(Equal(1))
@@ -186,12 +185,12 @@ var _ = Describe("Environment", func() {
 			testSchema.RegisterEventHandler("some_event", someEventHandler, goext.PriorityDefault)
 			testSchema.RegisterEventHandler("some_other_event", someOtherEventHandler, goext.PriorityDefault)
 
-			Expect(env.HandleEvent("some_event", goext.MakeContext(), traceID)).To(Succeed())
+			Expect(env.HandleEvent("some_event", goext.MakeContext())).To(Succeed())
 
 			Expect(someEventRunCount).To(Equal(1))
 			Expect(someOtherEventRunCount).To(Equal(0))
 
-			Expect(env.HandleEvent("some_other_event", goext.MakeContext(), traceID)).To(Succeed())
+			Expect(env.HandleEvent("some_other_event", goext.MakeContext())).To(Succeed())
 
 			Expect(someEventRunCount).To(Equal(1))
 			Expect(someOtherEventRunCount).To(Equal(1))
@@ -213,7 +212,7 @@ var _ = Describe("Environment", func() {
 			resource["description"] = "some description"
 			context = context.WithResource(resource)
 
-			Expect(env.HandleEvent("some_event", context, traceID)).To(Succeed())
+			Expect(env.HandleEvent("some_event", context)).To(Succeed())
 
 			Expect(returnedResource).To(Not(BeNil()))
 			Expect(returnedResource.ID).To(Equal("some-id"))
@@ -243,7 +242,7 @@ var _ = Describe("Environment", func() {
 			resource["description"] = "some description"
 			context = context.WithResource(resource)
 
-			Expect(env.HandleEvent("some_event", context, traceID)).To(Succeed())
+			Expect(env.HandleEvent("some_event", context)).To(Succeed())
 
 			Expect(returnedResource).To(Not(BeNil()))
 			Expect(returnedResource.ID).To(Equal("other-id"))

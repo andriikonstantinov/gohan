@@ -62,7 +62,7 @@ func (env *Environment) LoadExtensionsForPath(extensions []*schema.Extension, ti
 }
 
 //HandleEvent handles event
-func (env *Environment) HandleEvent(event string, context map[string]interface{}, traceID string) (err error) {
+func (env *Environment) HandleEvent(event string, context map[string]interface{}) (err error) {
 	context["event_type"] = event
 	for _, callback := range env.goCallbacks {
 		err = callback(event, context)

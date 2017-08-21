@@ -62,12 +62,7 @@ func init() {
 					ThrowOttoException(&call, err.Error())
 				}
 
-				traceIDValue, err := vm.Get("gohan_caller")
-				if err != nil {
-					log.Error("Error when getting uuid", err)
-				}
-				traceID, _ := traceIDValue.ToString()
-				resources, err := GohanModelList(context, schemaID, filterMap, traceID)
+				resources, err := GohanModelList(context, schemaID, filterMap)
 				if err != nil {
 					handleChainError(env, &call, err)
 				}
@@ -94,13 +89,7 @@ func init() {
 					tenantIDs = nil
 				}
 
-				traceIDValue, err := vm.Get("gohan_caller")
-				if err != nil {
-					log.Error("Error when getting uuid", err)
-				}
-				traceID, _ := traceIDValue.ToString()
-
-				resource, err := GohanModelFetch(context, schemaID, resourceID, tenantIDs, traceID)
+				resource, err := GohanModelFetch(context, schemaID, resourceID, tenantIDs)
 				if err != nil {
 					handleChainError(env, &call, err)
 				}
@@ -123,13 +112,7 @@ func init() {
 					ThrowOttoException(&call, err.Error())
 				}
 
-				traceIDValue, err := vm.Get("gohan_caller")
-				if err != nil {
-					log.Error("Error when getting uuid", err)
-				}
-				traceID, _ := traceIDValue.ToString()
-
-				resource, err := GohanModelCreate(context, schemaID, dataMap, traceID)
+				resource, err := GohanModelCreate(context, schemaID, dataMap)
 				if err != nil {
 					handleChainError(env, &call, err)
 				}
@@ -160,13 +143,7 @@ func init() {
 					tenantIDs = nil
 				}
 
-				traceIDValue, err := vm.Get("gohan_caller")
-				if err != nil {
-					log.Error("Error when getting uuid", err)
-				}
-				traceID, _ := traceIDValue.ToString()
-
-				resource, err := GohanModelUpdate(context, schemaID, resourceID, dataMap, tenantIDs, traceID)
+				resource, err := GohanModelUpdate(context, schemaID, resourceID, dataMap, tenantIDs)
 				if err != nil {
 					handleChainError(env, &call, err)
 				}
@@ -188,13 +165,8 @@ func init() {
 				if err != nil {
 					ThrowOttoException(&call, err.Error())
 				}
-				traceIDValue, err := vm.Get("gohan_caller")
-				if err != nil {
-					log.Error("Error when getting uuid", err)
-				}
-				traceID, _ := traceIDValue.ToString()
 
-				err = GohanModelDelete(context, schemaID, resourceID, traceID)
+				err = GohanModelDelete(context, schemaID, resourceID)
 				if err != nil {
 					handleChainError(env, &call, err)
 				}
@@ -212,7 +184,7 @@ func init() {
 
 //GohanModelList lists gohan resources and running extensions
 func GohanModelList(context map[string]interface{}, schemaID string,
-	filterMap map[string]interface{}, traceID string) (interface{}, error) {
+	filterMap map[string]interface{}) (interface{}, error) {
 
 	currentSchema, err := getSchema(schemaID)
 	if err != nil {
@@ -245,7 +217,7 @@ func GohanModelList(context map[string]interface{}, schemaID string,
 	}
 
 	if err := resources.GetResourcesInTransaction(
-		context, currentSchema, filter, nil, traceID); err != nil {
+		context, currentSchema, filter, nil); err != nil {
 		return nil, err
 	}
 	response, ok := context["response"].(map[string]interface{})
@@ -261,7 +233,7 @@ func GohanModelList(context map[string]interface{}, schemaID string,
 
 //GohanModelFetch fetch gohan resource and running extensions
 func GohanModelFetch(context map[string]interface{}, schemaID string, resourceID string,
-	tenantIDs []string, traceID string) (interface{}, error) {
+	tenantIDs []string) (interface{}, error) {
 
 	currentSchema, err := getSchema(schemaID)
 	if err != nil {
@@ -271,7 +243,7 @@ func GohanModelFetch(context map[string]interface{}, schemaID string, resourceID
 	context["path"] = currentSchema.GetPluralURL()
 
 	if err := resources.GetSingleResourceInTransaction(
-		context, currentSchema, resourceID, tenantIDs, traceID); err != nil {
+		context, currentSchema, resourceID, tenantIDs); err != nil {
 		return nil, err
 	}
 	response, ok := context["response"].(map[string]interface{})
@@ -283,7 +255,7 @@ func GohanModelFetch(context map[string]interface{}, schemaID string, resourceID
 
 //GohanModelCreate creates gohan resource and running extensions
 func GohanModelCreate(context map[string]interface{}, schemaID string,
-	dataMap map[string]interface{}, traceID string) (interface{}, error) {
+	dataMap map[string]interface{}) (interface{}, error) {
 
 	currentSchema, err := getSchema(schemaID)
 	if err != nil {
@@ -299,7 +271,7 @@ func GohanModelCreate(context map[string]interface{}, schemaID string,
 	}
 
 	if err := resources.CreateResourceInTransaction(
-		context, resourceObj, traceID); err != nil {
+		context, resourceObj); err != nil {
 		return nil, err
 	}
 	response, ok := context["response"].(map[string]interface{})
@@ -310,8 +282,7 @@ func GohanModelCreate(context map[string]interface{}, schemaID string,
 }
 
 //GohanModelUpdate updates gohan resource and running extensions
-func GohanModelUpdate(context map[string]interface{}, schemaID string, resourceID string, dataMap map[string]interface{},
-	tenantIDs []string, traceID string) (interface{}, error) {
+func GohanModelUpdate(context map[string]interface{}, schemaID string, resourceID string, dataMap map[string]interface{}, tenantIDs []string) (interface{}, error) {
 
 	currentSchema, err := getSchema(schemaID)
 	if err != nil {
@@ -320,7 +291,7 @@ func GohanModelUpdate(context map[string]interface{}, schemaID string, resourceI
 	context["schema"] = currentSchema
 	context["path"] = currentSchema.GetPluralURL()
 
-	err = resources.UpdateResourceInTransaction(context, currentSchema, resourceID, dataMap, tenantIDs, traceID)
+	err = resources.UpdateResourceInTransaction(context, currentSchema, resourceID, dataMap, tenantIDs)
 	if err != nil {
 		return nil, err
 	}
@@ -332,7 +303,7 @@ func GohanModelUpdate(context map[string]interface{}, schemaID string, resourceI
 }
 
 //GohanModelDelete deletes gohan resources and running extensions
-func GohanModelDelete(context map[string]interface{}, schemaID string, resourceID string, traceID string) error {
+func GohanModelDelete(context map[string]interface{}, schemaID string, resourceID string) error {
 
 	currentSchema, err := getSchema(schemaID)
 	if err != nil {
@@ -341,5 +312,5 @@ func GohanModelDelete(context map[string]interface{}, schemaID string, resourceI
 	context["schema"] = currentSchema
 	context["path"] = currentSchema.GetPluralURL()
 
-	return resources.DeleteResourceInTransaction(context, currentSchema, resourceID, traceID)
+	return resources.DeleteResourceInTransaction(context, currentSchema, resourceID)
 }

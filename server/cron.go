@@ -24,22 +24,20 @@ import (
 	"errors"
 	l "github.com/cloudwan/gohan/log"
 	"github.com/cloudwan/gohan/util"
-	"github.com/twinj/uuid"
 )
 
 //CRON Process
 func startCRONProcess(server *Server) {
-	traceID := uuid.NewV4().String()
 	config := util.GetConfig()
 	jobList := config.GetParam("cron", nil)
 	if jobList == nil {
 		return
 	}
 	if server.sync == nil {
-		log.Fatalf(fmt.Sprintf("[%s] Could not start CRON process because of sync backend misconfiguration.", traceID))
+		log.Fatalf(fmt.Sprintf("Could not start CRON process because of sync backend misconfiguration."))
 		l.FatalPanic(log)
 	}
-	log.Info("[%s] Started CRON process", traceID)
+	log.Info("Started CRON process")
 	c := cron.New()
 	var jobLocks = map[string](chan int){}
 
@@ -48,7 +46,7 @@ func startCRONProcess(server *Server) {
 		path := job["path"].(string)
 		timing := job["timing"].(string)
 		name := strings.TrimPrefix(path, "cron://")
-		log.Info("[%s] New job for %s / %s", traceID, path, timing)
+		log.Info("New job for %s / %s", path, timing)
 		lockKey := lockPath + "/" + name
 		jobLocks[lockKey] = make(chan int, 1)
 		jobLocks[lockKey] <- 1
@@ -62,7 +60,7 @@ func startCRONProcess(server *Server) {
 			case <-jobLocks[lockKey]:
 				_, err := server.sync.Lock(lockKey, false)
 				if err != nil {
-					log.Debug("[%s] Failed to take ETCD lock", traceID)
+					log.Debug("Failed to take ETCD lock")
 					jobLocks[lockKey] <- 1
 				}
 				return err
@@ -75,14 +73,14 @@ func startCRONProcess(server *Server) {
 		c.AddFunc(timing, func() {
 			err := takeLock()
 			if err != nil {
-				log.Info("[%s] Failed to schedule cron job, err: %s", traceID, err.Error())
+				log.Info("Failed to schedule cron job, err: %s", err.Error())
 				return
 			}
 			defer func() {
 				if r := recover(); r != nil {
-					log.Error("[%s] Cron job '%s' panicked: %s", traceID, path, r)
+					log.Error("Cron job '%s' panicked: %s", path, r)
 				}
-				log.Debug("[%s] Unlocking %s", traceID, lockKey)
+				log.Debug("Unlocking %s", lockKey)
 				jobLocks[lockKey] <- 1
 				server.sync.Unlock(lockKey)
 			}()
@@ -91,11 +89,11 @@ func startCRONProcess(server *Server) {
 				"path": path,
 			}
 			if err != nil {
-				log.Warning(fmt.Sprintf("[%s] extension error: %s", traceID, err))
+				log.Warning(fmt.Sprintf("extension error: %s", err))
 				return
 			}
 			clone := env.Clone()
-			if err := clone.HandleEvent("notification", context, traceID); err != nil {
+			if err := clone.HandleEvent("notification", context); err != nil {
 				log.Warning(fmt.Sprintf("extension error: %s", err))
 				return
 			}

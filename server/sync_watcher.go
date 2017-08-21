@@ -29,7 +29,6 @@ import (
 	"github.com/cloudwan/gohan/metrics"
 	gohan_sync "github.com/cloudwan/gohan/sync"
 	"github.com/cloudwan/gohan/util"
-	"github.com/twinj/uuid"
 )
 
 // SyncWatchRevisionPrefix
@@ -337,13 +336,13 @@ func (watcher *SyncWatcher) measureSyncTime(timeStarted time.Time, action string
 //Run extension on sync
 func (watcher *SyncWatcher) runExtensionOnSync(response *gohan_sync.Event, env extension.Environment) {
 	defer watcher.measureSyncTime(time.Now(), response.Action)
-	traceID := uuid.NewV4().String()
+
 	context := map[string]interface{}{
 		"action": response.Action,
 		"data":   response.Data,
 		"key":    response.Key,
 	}
-	if err := env.HandleEvent("notification", context, traceID); err != nil {
+	if err := env.HandleEvent("notification", context); err != nil {
 		log.Warning(fmt.Sprintf("extension error: %s", err))
 		return
 	}

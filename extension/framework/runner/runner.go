@@ -28,7 +28,6 @@ import (
 	"time"
 
 	l "github.com/cloudwan/gohan/log"
-	"github.com/twinj/uuid"
 )
 
 const (
@@ -121,7 +120,6 @@ func generalError(err error) TestRunnerErrors {
 }
 
 func (runner *TestRunner) runTest(testName string, env *Environment) (err error) {
-	traceID := uuid.NewV4().String()
 	defer func() {
 		runner.printTestResult(testName, err)
 	}()
@@ -166,7 +164,7 @@ func (runner *TestRunner) runTest(testName string, env *Environment) (err error)
 	}
 
 	env.SetEventTimeLimit("exit", time.Second*30)
-	env.HandleEvent("exit", map[string]interface{}{}, traceID)
+	env.HandleEvent("exit", map[string]interface{}{})
 
 	mockError := env.CheckAllMockCallsMade()
 	if err == nil {

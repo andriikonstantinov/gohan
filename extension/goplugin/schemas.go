@@ -20,12 +20,12 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/cloudwan/gohan/db/transaction"
 	"github.com/cloudwan/gohan/extension/goext"
 	"github.com/cloudwan/gohan/schema"
 	"github.com/jmoiron/sqlx/reflectx"
 	"github.com/twinj/uuid"
 	"strings"
+	"github.com/cloudwan/gohan/db/transaction"
 )
 
 var (
@@ -344,7 +344,6 @@ type TransactionData struct {
 
 // Create creates a resource
 func (thisSchema *Schema) Create(resource interface{}, context goext.Context) error {
-	traceID := uuid.NewV4().String()
 	if !isPointer(resource) {
 		return NotPointerErr
 	}
@@ -358,13 +357,13 @@ func (thisSchema *Schema) Create(resource interface{}, context goext.Context) er
 			WithSchemaID(thisSchema.ID()).
 			WithResource(thisSchema.structToMap(resource))
 		contextSetTransaction(contextCopy, tx)
-		return thisSchema.createInTransaction(resource, contextCopy, tx, traceID)
+		return thisSchema.createInTransaction(resource, contextCopy, tx)
 	}
 
 	context.WithSchemaID(thisSchema.ID()).
 		WithResource(thisSchema.structToMap(resource))
 
-	if err := thisSchema.environment.HandleEvent(goext.PreCreate, context, traceID); err != nil {
+	if err := thisSchema.environment.HandleEvent(goext.PreCreate, context); err != nil {
 		return err
 	}
 
@@ -375,7 +374,7 @@ func (thisSchema *Schema) Create(resource interface{}, context goext.Context) er
 	defer tx.Close()
 	contextSetTransaction(context, tx)
 
-	if err = thisSchema.environment.HandleEvent(goext.PreCreateTx, context, traceID); err != nil {
+	if err = thisSchema.environment.HandleEvent(goext.PreCreateTx, context); err != nil {
 		return err
 	}
 
@@ -387,7 +386,7 @@ func (thisSchema *Schema) Create(resource interface{}, context goext.Context) er
 		return err
 	}
 
-	if err = thisSchema.environment.HandleEvent(goext.PostCreateTx, context, traceID); err != nil {
+	if err = thisSchema.environment.HandleEvent(goext.PostCreateTx, context); err != nil {
 		return err
 	}
 
@@ -399,17 +398,17 @@ func (thisSchema *Schema) Create(resource interface{}, context goext.Context) er
 		return err
 	}
 
-	return thisSchema.environment.HandleEvent(goext.PostCreate, context, traceID)
+	return thisSchema.environment.HandleEvent(goext.PostCreate, context)
 }
 
-func (thisSchema *Schema) createInTransaction(resource interface{}, context goext.Context, tx goext.ITransaction, traceID string) error {
+func (thisSchema *Schema) createInTransaction(resource interface{}, context goext.Context, tx goext.ITransaction) error {
 	var err error
 
-	if err := thisSchema.environment.HandleEvent(goext.PreCreate, context, traceID); err != nil {
+	if err := thisSchema.environment.HandleEvent(goext.PreCreate, context); err != nil {
 		return err
 	}
 
-	if err = thisSchema.environment.HandleEvent(goext.PreCreateTx, context, traceID); err != nil {
+	if err = thisSchema.environment.HandleEvent(goext.PreCreateTx, context); err != nil {
 		return err
 	}
 
@@ -421,11 +420,11 @@ func (thisSchema *Schema) createInTransaction(resource interface{}, context goex
 		return err
 	}
 
-	if err = thisSchema.environment.HandleEvent(goext.PostCreateTx, context, traceID); err != nil {
+	if err = thisSchema.environment.HandleEvent(goext.PostCreateTx, context); err != nil {
 		return err
 	}
 
-	return thisSchema.environment.HandleEvent(goext.PostCreate, context, traceID)
+	return thisSchema.environment.HandleEvent(goext.PostCreate, context)
 }
 
 // Update updates a resource
@@ -437,7 +436,6 @@ func (thisSchema *Schema) Update(resource interface{}, context goext.Context) er
 	var tx goext.ITransaction
 	var resourceData *schema.Resource
 	var err error
-	traceID := uuid.NewV4().String()
 
 	if resourceData, err = thisSchema.structToResource(resource); err != nil {
 		return err
@@ -456,7 +454,7 @@ func (thisSchema *Schema) Update(resource interface{}, context goext.Context) er
 		WithResourceID(resourceData.ID()).
 		WithSchemaID(thisSchema.ID())
 
-	if err = thisSchema.environment.HandleEvent(goext.PreUpdate, contextCopy, traceID); err != nil {
+	if err = thisSchema.environment.HandleEvent(goext.PreUpdate, contextCopy); err != nil {
 		return err
 	}
 
@@ -471,7 +469,7 @@ func (thisSchema *Schema) Update(resource interface{}, context goext.Context) er
 		contextSetTransaction(context, tx)
 	}
 
-	if err = thisSchema.environment.HandleEvent(goext.PreUpdateTx, contextCopy, traceID); err != nil {
+	if err = thisSchema.environment.HandleEvent(goext.PreUpdateTx, contextCopy); err != nil {
 		return err
 	}
 
@@ -483,7 +481,7 @@ func (thisSchema *Schema) Update(resource interface{}, context goext.Context) er
 		return err
 	}
 
-	if err = thisSchema.environment.HandleEvent(goext.PostUpdateTx, contextCopy, traceID); err != nil {
+	if err = thisSchema.environment.HandleEvent(goext.PostUpdateTx, contextCopy); err != nil {
 		return err
 	}
 
@@ -493,15 +491,13 @@ func (thisSchema *Schema) Update(resource interface{}, context goext.Context) er
 		}
 	}
 
-	return thisSchema.environment.HandleEvent(goext.PostUpdate, contextCopy, traceID)
+	return thisSchema.environment.HandleEvent(goext.PostUpdate, contextCopy)
 }
 
 // Delete deletes resource by ID
 func (thisSchema *Schema) Delete(filter goext.Filter, context goext.Context) error {
 	var tx goext.ITransaction
 	var err error
-	traceID := uuid.NewV4().String()
-
 	if context == nil {
 		context = goext.MakeContext()
 	}
@@ -534,11 +530,11 @@ func (thisSchema *Schema) Delete(filter goext.Filter, context goext.Context) err
 		contextTx = contextTx.WithResource(thisSchema.structToMap(resource.Addr().Interface())).
 			WithSchemaID(thisSchema.ID())
 
-		if err = thisSchema.environment.HandleEvent(goext.PreDelete, contextTx, traceID); err != nil {
+		if err = thisSchema.environment.HandleEvent(goext.PreDelete, contextTx); err != nil {
 			return err
 		}
 
-		if err = thisSchema.environment.HandleEvent(goext.PreDeleteTx, contextTx, traceID); err != nil {
+		if err = thisSchema.environment.HandleEvent(goext.PreDeleteTx, contextTx); err != nil {
 			return err
 		}
 
@@ -546,11 +542,11 @@ func (thisSchema *Schema) Delete(filter goext.Filter, context goext.Context) err
 			return err
 		}
 
-		if err = thisSchema.environment.HandleEvent(goext.PostDeleteTx, contextTx, traceID); err != nil {
+		if err = thisSchema.environment.HandleEvent(goext.PostDeleteTx, contextTx); err != nil {
 			return err
 		}
 
-		if err = thisSchema.environment.HandleEvent(goext.PostDelete, contextTx, traceID); err != nil {
+		if err = thisSchema.environment.HandleEvent(goext.PostDelete, contextTx); err != nil {
 			return err
 		}
 	}

@@ -55,7 +55,6 @@ var _ = Describe("GohanDb", func() {
 		err           error
 		r0, r1        *schema.Resource
 		mockCtrl      *gomock.Controller
-		traceID       string
 	)
 
 	var ()
@@ -70,7 +69,6 @@ var _ = Describe("GohanDb", func() {
 			map[string]interface{}{"tenant_id": "t0", "test_string": "str0", "test_bool": false},
 			map[string]interface{}{"tenant_id": "t1", "test_string": "str1", "test_bool": true},
 		}
-		traceID = "1234-5678-90AB-CDEF"
 
 		r0, err = schema.NewResource(s, fakeResources[0])
 		Expect(err).ToNot(HaveOccurred())
@@ -110,7 +108,7 @@ var _ = Describe("GohanDb", func() {
 
 				context := map[string]interface{}{}
 
-				Expect(env.HandleEvent("test_event", context, traceID)).To(Succeed())
+				Expect(env.HandleEvent("test_event", context)).To(Succeed())
 			})
 		})
 
@@ -143,7 +141,7 @@ var _ = Describe("GohanDb", func() {
 					"transaction": mockTx,
 				}
 
-				Expect(env.HandleEvent("test_event", context, traceID)).To(Succeed())
+				Expect(env.HandleEvent("test_event", context)).To(Succeed())
 			})
 		})
 
@@ -187,7 +185,7 @@ var _ = Describe("GohanDb", func() {
 						"transaction": mockTx,
 					}
 
-					Expect(env.HandleEvent("test_event", context, traceID)).To(Succeed())
+					Expect(env.HandleEvent("test_event", context)).To(Succeed())
 					Expect(context["resp"]).To(
 						Equal(
 							fakeResources,
@@ -228,7 +226,7 @@ var _ = Describe("GohanDb", func() {
 					context := map[string]interface{}{
 						"transaction": mockTx,
 					}
-					Expect(env.HandleEvent("test_event", context, traceID)).To(Succeed())
+					Expect(env.HandleEvent("test_event", context)).To(Succeed())
 
 					Expect(context["resp"]).To(
 						Equal(
@@ -277,7 +275,7 @@ var _ = Describe("GohanDb", func() {
 					context := map[string]interface{}{
 						"transaction": mockTx,
 					}
-					Expect(env.HandleEvent("test_event", context, traceID)).To(Succeed())
+					Expect(env.HandleEvent("test_event", context)).To(Succeed())
 
 					Expect(context["resp"]).To(
 						Equal(
@@ -326,7 +324,7 @@ var _ = Describe("GohanDb", func() {
 					context := map[string]interface{}{
 						"transaction": mockTx,
 					}
-					Expect(env.HandleEvent("test_event", context, traceID)).To(Succeed())
+					Expect(env.HandleEvent("test_event", context)).To(Succeed())
 
 					Expect(context["resp"]).To(
 						Equal(
@@ -377,7 +375,7 @@ var _ = Describe("GohanDb", func() {
 					context := map[string]interface{}{
 						"transaction": mockTx,
 					}
-					Expect(env.HandleEvent("test_event", context, traceID)).To(Succeed())
+					Expect(env.HandleEvent("test_event", context)).To(Succeed())
 
 					Expect(context["resp"]).To(
 						Equal(
@@ -428,7 +426,7 @@ var _ = Describe("GohanDb", func() {
 					"transaction": mockTx,
 				}
 
-				Expect(env.HandleEvent("test_event", context, traceID)).To(Succeed())
+				Expect(env.HandleEvent("test_event", context)).To(Succeed())
 				Expect(context["resp"]).To(
 					Equal(
 						map[string]interface{}{
@@ -459,7 +457,7 @@ var _ = Describe("GohanDb", func() {
 				env := newEnvironmentWithExtension(extension, testDB)
 
 				context := map[string]interface{}{}
-				Expect(env.HandleEvent("test_event", context, traceID)).To(Succeed())
+				Expect(env.HandleEvent("test_event", context)).To(Succeed())
 				Expect(context["resp"]).To(ContainElement("tests.`id` as `tests__id`"))
 				Expect(context["resp"]).To(ContainElement("tests.`tenant_id` as `tests__tenant_id`"))
 				Expect(context["resp"]).To(ContainElement("tests.`test_string` as `tests__test_string`"))
@@ -480,7 +478,7 @@ var _ = Describe("GohanDb", func() {
 				env := newEnvironmentWithExtension(extension, testDB)
 
 				context := map[string]interface{}{}
-				err = env.HandleEvent("test_event", context, traceID)
+				err = env.HandleEvent("test_event", context)
 				Expect(err).NotTo(BeNil())
 				Expect(err.Error()).To(MatchRegexp("test_event: Error: Unknown schema 'NOT EXIST'"))
 			})
@@ -516,7 +514,7 @@ var _ = Describe("GohanDb", func() {
 				context := map[string]interface{}{
 					"transaction": mockTx,
 				}
-				Expect(env.HandleEvent("test_event", context, traceID)).To(Succeed())
+				Expect(env.HandleEvent("test_event", context)).To(Succeed())
 				Expect(context["resp"]).To(Equal(fakeResources))
 			})
 		})
@@ -544,7 +542,7 @@ var _ = Describe("GohanDb", func() {
 					"transaction": "not_a_transaction",
 				}
 
-				err = env.HandleEvent("test_event", context, traceID)
+				err = env.HandleEvent("test_event", context)
 				Expect(err).NotTo(BeNil())
 				Expect(err.Error()).To(MatchRegexp("test_event: Error: Argument 'not_a_transaction' should be of type 'Transaction'"))
 			})
@@ -574,7 +572,7 @@ var _ = Describe("GohanDb", func() {
 				context := map[string]interface{}{
 					"transaction": mockTx,
 				}
-				err = env.HandleEvent("test_event", context, traceID)
+				err = env.HandleEvent("test_event", context)
 				Expect(err).NotTo(BeNil())
 				Expect(err.Error()).To(MatchRegexp("test_event: Error: Unknown schema 'INVALID_SCHEMA_ID'"))
 			})
@@ -604,7 +602,7 @@ var _ = Describe("GohanDb", func() {
 				context := map[string]interface{}{
 					"transaction": mockTx,
 				}
-				err = env.HandleEvent("test_event", context, traceID)
+				err = env.HandleEvent("test_event", context)
 				Expect(err).NotTo(BeNil())
 				Expect(err.Error()).To(MatchRegexp("test_event: Error: Argument 'THIS IS NOT AN ARRAY' should be of type 'array'"))
 			})
@@ -637,7 +635,7 @@ var _ = Describe("GohanDb", func() {
 				context := map[string]interface{}{
 					"transaction": mockTx,
 				}
-				err = env.HandleEvent("test_event", context, traceID)
+				err = env.HandleEvent("test_event", context)
 				Expect(err).NotTo(BeNil())
 				Expect(err.Error()).To(MatchRegexp("test_event: Error: Error during gohan_db_query: SOMETHING HAPPEN"))
 			})

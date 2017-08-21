@@ -50,8 +50,6 @@ var _ = Describe("Otto extension manager", func() {
 
 		timeLimit  time.Duration
 		timeLimits []*schema.PathEventTimeLimit
-
-		traceID string
 	)
 
 	BeforeEach(func() {
@@ -60,8 +58,6 @@ var _ = Describe("Otto extension manager", func() {
 
 		timeLimit = time.Duration(1) * time.Second
 		timeLimits = []*schema.PathEventTimeLimit{}
-
-		traceID = "1234-5678-90AB-CDEF"
 	})
 
 	AfterEach(func() {
@@ -135,7 +131,7 @@ var _ = Describe("Otto extension manager", func() {
 				context := map[string]interface{}{
 					"id": "test",
 				}
-				Expect(env.HandleEvent("test_event", context, traceID)).To(Succeed())
+				Expect(env.HandleEvent("test_event", context)).To(Succeed())
 				Expect(context["resp"]).ToNot(BeNil())
 			})
 		})
@@ -166,7 +162,7 @@ var _ = Describe("Otto extension manager", func() {
 				context := map[string]interface{}{
 					"id": "test",
 				}
-				Expect(env.HandleEvent("test_event", context, traceID)).To(Succeed())
+				Expect(env.HandleEvent("test_event", context)).To(Succeed())
 				Expect(context["resp"]).ToNot(BeNil())
 				server.Close()
 			})
@@ -202,7 +198,7 @@ var _ = Describe("Otto extension manager", func() {
 				context := map[string]interface{}{
 					"id": "test",
 				}
-				err = env.HandleEvent("test_event", context, traceID)
+				err = env.HandleEvent("test_event", context)
 				Expect(err).To(HaveOccurred())
 
 				Expect(regexp.MatchString(`ReferenceError:\s'b'`, err.Error())).To(BeTrue())
@@ -238,7 +234,7 @@ var _ = Describe("Otto extension manager", func() {
 					"id":   "test",
 					"nulo": nil,
 				}
-				Expect(env.HandleEvent("test_event", context, traceID)).To(Succeed())
+				Expect(env.HandleEvent("test_event", context)).To(Succeed())
 				Expect(context).To(HaveKeyWithValue("respondo", "verdo"))
 			})
 		})
@@ -270,7 +266,7 @@ var _ = Describe("Otto extension manager", func() {
 					"id": "test",
 				}
 
-				err = env.HandleEvent("test_event", context, traceID)
+				err = env.HandleEvent("test_event", context)
 				Expect(err).To(MatchError(ContainSubstring("exceed timeout for extension execution")))
 				txValue1, err := env.VM.Get("unclosedTx")
 				Expect(err).ToNot(HaveOccurred())
@@ -278,7 +274,7 @@ var _ = Describe("Otto extension manager", func() {
 				Expect(err).ToNot(HaveOccurred())
 				Expect(tx1.Closed()).To(BeTrue())
 
-				err = cloned.HandleEvent("test_event", context, traceID)
+				err = cloned.HandleEvent("test_event", context)
 				Expect(err).To(MatchError(ContainSubstring("exceed timeout for extension execution")))
 				txValue2, err := cloned.VM.Get("unclosedTx")
 				Expect(err).ToNot(HaveOccurred())
@@ -318,7 +314,7 @@ var _ = Describe("Otto extension manager", func() {
 				}
 
 				timeStart := time.Now()
-				err = env.HandleEvent("test_event", context, traceID)
+				err = env.HandleEvent("test_event", context)
 				timeEnd := time.Now()
 				timeDuration := timeEnd.Sub(timeStart)
 				Expect(err).To(MatchError(ContainSubstring("exceed timeout for extension execution")))
@@ -354,7 +350,7 @@ var _ = Describe("Otto extension manager", func() {
 				}
 
 				timeStart := time.Now()
-				err = env.HandleEvent("test_event", context, traceID)
+				err = env.HandleEvent("test_event", context)
 				timeEnd := time.Now()
 				timeDuration := timeEnd.Sub(timeStart)
 				Expect(err).To(MatchError(ContainSubstring("exceed timeout for extension execution")))
@@ -390,7 +386,7 @@ var _ = Describe("Otto extension manager", func() {
 				context := map[string]interface{}{
 					"id": "test",
 				}
-				Expect(env.HandleEvent("test_event", context, traceID)).To(Succeed())
+				Expect(env.HandleEvent("test_event", context)).To(Succeed())
 				Expect(context).To(HaveKeyWithValue("resp", HaveKeyWithValue("status_code", "200")))
 				Expect(context).To(HaveKeyWithValue("resp", HaveKeyWithValue("body", "HELLO")))
 				server.Close()
@@ -415,14 +411,14 @@ var _ = Describe("Otto extension manager", func() {
 				context := map[string]interface{}{
 					"id": "test",
 				}
-				Expect(env.HandleEvent("test_event", context, traceID)).To(Succeed())
+				Expect(env.HandleEvent("test_event", context)).To(Succeed())
 				Expect(context).To(HaveKeyWithValue("resp", HaveKeyWithValue("status", "err")))
 				Expect(context).To(HaveKeyWithValue("resp", HaveKey("error")))
 			})
 		})
 
 		Context("When the content type is not specified", func() {
-			FIt("Should post the data as a JSON document", func() {
+			It("Should post the data as a JSON document", func() {
 				server := ghttp.NewServer()
 				server.AppendHandlers(ghttp.CombineHandlers(
 					ghttp.VerifyRequest("POST", "/contents"),
@@ -448,7 +444,7 @@ var _ = Describe("Otto extension manager", func() {
 				context := map[string]interface{}{
 					"id": "test",
 				}
-				Expect(env.HandleEvent("test_event", context, traceID)).To(Succeed())
+				Expect(env.HandleEvent("test_event", context)).To(Succeed())
 				Expect(context).To(HaveKeyWithValue("resp", HaveKeyWithValue("status_code", "200")))
 				server.Close()
 			})
@@ -491,7 +487,7 @@ var _ = Describe("Otto extension manager", func() {
 				context := map[string]interface{}{
 					"id": "test",
 				}
-				Expect(env.HandleEvent("test_event", context, traceID)).To(Succeed())
+				Expect(env.HandleEvent("test_event", context)).To(Succeed())
 				Expect(context).To(HaveKeyWithValue("resp", HaveKeyWithValue("status_code", "200")))
 				server.Close()
 			})
@@ -532,7 +528,7 @@ var _ = Describe("Otto extension manager", func() {
 				context := map[string]interface{}{
 					"id": "test",
 				}
-				Expect(env.HandleEvent("test_event", context, traceID)).To(Succeed())
+				Expect(env.HandleEvent("test_event", context)).To(Succeed())
 				Expect(context).To(HaveKeyWithValue("response", HaveKeyWithValue("status_code", 200)))
 				Expect(context).To(HaveKeyWithValue("response", HaveKeyWithValue("body", "{\"output\":\"value\"}")))
 				server.Close()
@@ -573,7 +569,7 @@ var _ = Describe("Otto extension manager", func() {
 				context := map[string]interface{}{
 					"id": "test",
 				}
-				Expect(env.HandleEvent("test_event", context, traceID)).To(Succeed())
+				Expect(env.HandleEvent("test_event", context)).To(Succeed())
 				Expect(context).To(HaveKeyWithValue("response", HaveKeyWithValue("status_code", 302)))
 				Expect(context).To(HaveKeyWithValue("response", HaveKeyWithValue("body", "")))
 				server.Close()
@@ -597,7 +593,7 @@ var _ = Describe("Otto extension manager", func() {
 			Expect(env.LoadExtensionsForPath(extensions, timeLimit, timeLimits, "test_path")).To(Succeed())
 
 			context := map[string]interface{}{}
-			Expect(env.HandleEvent("test_event", context, traceID)).To(Succeed())
+			Expect(env.HandleEvent("test_event", context)).To(Succeed())
 			Expect(context).To(HaveKeyWithValue("resp", HaveKeyWithValue("connection", "test.db")))
 			Expect(context).To(HaveKeyWithValue("resp", HaveKeyWithValue("type", "sqlite3")))
 		})
@@ -617,7 +613,7 @@ var _ = Describe("Otto extension manager", func() {
 			Expect(env.LoadExtensionsForPath(extensions, timeLimit, timeLimits, "test_path")).To(Succeed())
 
 			context := map[string]interface{}{}
-			Expect(env.HandleEvent("test_event", context, traceID)).To(Succeed())
+			Expect(env.HandleEvent("test_event", context)).To(Succeed())
 			Expect(context).To(HaveKeyWithValue("resp", BeFalse()))
 		})
 	})
@@ -767,7 +763,7 @@ var _ = Describe("Otto extension manager", func() {
 						"id":          "test",
 						"transaction": tx,
 					}
-					Expect(env.HandleEvent("test_event", context, traceID)).To(Succeed())
+					Expect(env.HandleEvent("test_event", context)).To(Succeed())
 					Expect(context["network"]).ToNot(BeNil())
 					Expect(context["networks"]).ToNot(BeNil())
 					Expect(context["networks2"]).ToNot(BeNil())
@@ -811,7 +807,7 @@ var _ = Describe("Otto extension manager", func() {
 						"id":          "test",
 						"transaction": nil,
 					}
-					Expect(env.HandleEvent("test_event", context, traceID)).To(Succeed())
+					Expect(env.HandleEvent("test_event", context)).To(Succeed())
 					Expect(context["network"]).ToNot(BeNil())
 					Expect(context["networks"]).ToNot(BeNil())
 				})
@@ -858,7 +854,7 @@ var _ = Describe("Otto extension manager", func() {
 					context := map[string]interface{}{
 						"id": "test",
 					}
-					Expect(env.HandleEvent("test_event", context, traceID)).To(Succeed())
+					Expect(env.HandleEvent("test_event", context)).To(Succeed())
 					Expect(context["network"]).ToNot(BeNil())
 					Expect(context["networks"]).ToNot(BeNil())
 				})
@@ -900,7 +896,7 @@ var _ = Describe("Otto extension manager", func() {
 							defer tx.Close()
 							context["transaction"] = tx
 
-							Expect(env.HandleEvent("test", context, traceID)).To(Succeed())
+							Expect(env.HandleEvent("test", context)).To(Succeed())
 							Expect(tx.Commit()).To(Succeed())
 							Expect(context).To(HaveKeyWithValue("networks", ConsistOf(util.MatchAsJSON(network1))))
 						})
@@ -918,7 +914,7 @@ var _ = Describe("Otto extension manager", func() {
 							Expect(err).NotTo(HaveOccurred())
 							defer tx.Close()
 							context["transaction"] = tx
-							Expect(env.HandleEvent("test", context, traceID)).To(Succeed())
+							Expect(env.HandleEvent("test", context)).To(Succeed())
 							Expect(context).To(HaveKeyWithValue("networks", ConsistOf(util.MatchAsJSON(network1))))
 						})
 					})
@@ -934,7 +930,7 @@ var _ = Describe("Otto extension manager", func() {
 							Expect(err).NotTo(HaveOccurred())
 							defer tx.Close()
 							context["transaction"] = tx
-							Expect(env.HandleEvent("test", context, traceID)).To(Succeed())
+							Expect(env.HandleEvent("test", context)).To(Succeed())
 							Expect(context).To(HaveKeyWithValue("networks", ConsistOf(util.MatchAsJSON(network1))))
 						})
 					})
@@ -952,7 +948,7 @@ var _ = Describe("Otto extension manager", func() {
 							Expect(err).NotTo(HaveOccurred())
 							defer tx.Close()
 							context["transaction"] = tx
-							Expect(env.HandleEvent("test", context, traceID)).To(Succeed())
+							Expect(env.HandleEvent("test", context)).To(Succeed())
 							Expect(context["exception"]).To(HaveKeyWithValue("message", ContainSubstring("Labori inteligente")))
 							Expect(context["exception_message"]).To(ContainSubstring("Labori inteligente"))
 						})
@@ -971,7 +967,7 @@ var _ = Describe("Otto extension manager", func() {
 							Expect(err).NotTo(HaveOccurred())
 							defer tx.Close()
 							context["transaction"] = tx
-							err = env.HandleEvent("test", context, traceID)
+							err = env.HandleEvent("test", context)
 							Expect(err).To(MatchError(ContainSubstring("No response")))
 						})
 					})
@@ -985,7 +981,7 @@ var _ = Describe("Otto extension manager", func() {
 						})
 
 						It("Returns the proper error", func() {
-							err := env.HandleEvent("test", context, traceID)
+							err := env.HandleEvent("test", context)
 							Expect(err).To(MatchError(ContainSubstring("arguments")))
 						})
 					})
@@ -997,7 +993,7 @@ var _ = Describe("Otto extension manager", func() {
 						})
 
 						It("Returns the proper error", func() {
-							err := env.HandleEvent("test", context, traceID)
+							err := env.HandleEvent("test", context)
 							Expect(err).To(MatchError(ContainSubstring("Unknown schema")))
 						})
 					})
@@ -1009,7 +1005,7 @@ var _ = Describe("Otto extension manager", func() {
 						})
 
 						It("Returns the proper error", func() {
-							err := env.HandleEvent("test", context, traceID)
+							err := env.HandleEvent("test", context)
 							Expect(err).To(MatchError(ContainSubstring("not a string")))
 						})
 					})
@@ -1021,7 +1017,7 @@ var _ = Describe("Otto extension manager", func() {
 						})
 
 						It("Returns the proper error", func() {
-							err := env.HandleEvent("test", context, traceID)
+							err := env.HandleEvent("test", context)
 							Expect(err).To(MatchError(ContainSubstring("not a string")))
 						})
 					})
@@ -1059,7 +1055,7 @@ var _ = Describe("Otto extension manager", func() {
 							defer tx.Close()
 							context["transaction"] = tx
 
-							Expect(env.HandleEvent("test", context, traceID)).To(Succeed())
+							Expect(env.HandleEvent("test", context)).To(Succeed())
 							Expect(tx.Commit()).To(Succeed())
 							By(fmt.Sprintf("%v", context))
 							resultRaw, ok := context["network"]
@@ -1080,7 +1076,7 @@ var _ = Describe("Otto extension manager", func() {
 							Expect(err).NotTo(HaveOccurred())
 							defer tx.Close()
 							context["transaction"] = tx
-							Expect(env.HandleEvent("test", context, traceID)).To(Succeed())
+							Expect(env.HandleEvent("test", context)).To(Succeed())
 							Expect(context["exception"]).To(HaveKeyWithValue("problem", int(resources.NotFound)))
 							Expect(context["exception_message"]).To(ContainSubstring("ResourceException"))
 						})
@@ -1099,7 +1095,7 @@ var _ = Describe("Otto extension manager", func() {
 							Expect(err).NotTo(HaveOccurred())
 							defer tx.Close()
 							context["transaction"] = tx
-							Expect(env.HandleEvent("test", context, traceID)).To(Succeed())
+							Expect(env.HandleEvent("test", context)).To(Succeed())
 							Expect(context["exception"]).To(HaveKeyWithValue("message", ContainSubstring("Labori inteligente")))
 							Expect(context["exception_message"]).To(ContainSubstring("Labori inteligente"))
 						})
@@ -1118,7 +1114,7 @@ var _ = Describe("Otto extension manager", func() {
 							Expect(err).NotTo(HaveOccurred())
 							defer tx.Close()
 							context["transaction"] = tx
-							err = env.HandleEvent("test", context, traceID)
+							err = env.HandleEvent("test", context)
 							Expect(err).To(MatchError(ContainSubstring("No response")))
 						})
 					})
@@ -1132,7 +1128,7 @@ var _ = Describe("Otto extension manager", func() {
 						})
 
 						It("Returns the proper error", func() {
-							err := env.HandleEvent("test", context, traceID)
+							err := env.HandleEvent("test", context)
 							Expect(err).To(MatchError(ContainSubstring("arguments")))
 						})
 					})
@@ -1144,7 +1140,7 @@ var _ = Describe("Otto extension manager", func() {
 						})
 
 						It("Returns the proper error", func() {
-							err := env.HandleEvent("test", context, traceID)
+							err := env.HandleEvent("test", context)
 							Expect(err).To(MatchError(ContainSubstring("Unknown schema")))
 						})
 					})
@@ -1182,7 +1178,7 @@ var _ = Describe("Otto extension manager", func() {
 							Expect(err).NotTo(HaveOccurred())
 							defer tx.Close()
 							context["transaction"] = tx
-							Expect(env.HandleEvent("test", context, traceID)).To(Succeed())
+							Expect(env.HandleEvent("test", context)).To(Succeed())
 							Expect(tx.Commit()).To(Succeed())
 							for key, value := range network2 {
 								Expect(context).To(HaveKeyWithValue("network", HaveKeyWithValue(key, value)))
@@ -1204,7 +1200,7 @@ var _ = Describe("Otto extension manager", func() {
 							Expect(err).NotTo(HaveOccurred())
 							defer tx.Close()
 							context["transaction"] = tx
-							Expect(env.HandleEvent("test", context, traceID)).To(Succeed())
+							Expect(env.HandleEvent("test", context)).To(Succeed())
 							Expect(context["exception"]).To(HaveKeyWithValue("message", ContainSubstring("Labori inteligente")))
 							Expect(context["exception_message"]).To(ContainSubstring("Labori inteligente"))
 						})
@@ -1224,7 +1220,7 @@ var _ = Describe("Otto extension manager", func() {
 							Expect(err).NotTo(HaveOccurred())
 							defer tx.Close()
 							context["transaction"] = tx
-							err = env.HandleEvent("test", context, traceID)
+							err = env.HandleEvent("test", context)
 							Expect(err).To(MatchError(ContainSubstring("No response")))
 						})
 					})
@@ -1238,7 +1234,7 @@ var _ = Describe("Otto extension manager", func() {
 						})
 
 						It("Returns the proper error", func() {
-							err := env.HandleEvent("test", context, traceID)
+							err := env.HandleEvent("test", context)
 							Expect(err).To(MatchError(ContainSubstring("arguments")))
 						})
 					})
@@ -1251,7 +1247,7 @@ var _ = Describe("Otto extension manager", func() {
 						})
 
 						It("Returns the proper error", func() {
-							err := env.HandleEvent("test", context, traceID)
+							err := env.HandleEvent("test", context)
 							Expect(err).To(MatchError(ContainSubstring("Unknown schema")))
 						})
 					})
@@ -1263,7 +1259,7 @@ var _ = Describe("Otto extension manager", func() {
 						})
 
 						It("Returns the proper error", func() {
-							err := env.HandleEvent("test", context, traceID)
+							err := env.HandleEvent("test", context)
 							Expect(err).To(MatchError(ContainSubstring("be of type 'Object'")))
 						})
 					})
@@ -1301,7 +1297,7 @@ var _ = Describe("Otto extension manager", func() {
 							defer tx.Close()
 							context["transaction"] = tx
 
-							Expect(env.HandleEvent("test", context, traceID)).To(Succeed())
+							Expect(env.HandleEvent("test", context)).To(Succeed())
 							Expect(tx.Commit()).To(Succeed())
 							Expect(context).To(HaveKeyWithValue("network", HaveKeyWithValue("name", network2["name"])))
 						})
@@ -1322,7 +1318,7 @@ var _ = Describe("Otto extension manager", func() {
 							defer tx.Close()
 							context["transaction"] = tx
 
-							Expect(env.HandleEvent("test", context, traceID)).To(Succeed())
+							Expect(env.HandleEvent("test", context)).To(Succeed())
 							Expect(context["exception"]).To(HaveKeyWithValue("message", ContainSubstring("Labori inteligente")))
 							Expect(context["exception_message"]).To(ContainSubstring("Labori inteligente"))
 						})
@@ -1343,7 +1339,7 @@ var _ = Describe("Otto extension manager", func() {
 							defer tx.Close()
 							context["transaction"] = tx
 
-							err = env.HandleEvent("test", context, traceID)
+							err = env.HandleEvent("test", context)
 							Expect(err).To(MatchError(ContainSubstring("No response")))
 						})
 					})
@@ -1357,7 +1353,7 @@ var _ = Describe("Otto extension manager", func() {
 						})
 
 						It("Returns the proper error", func() {
-							err := env.HandleEvent("test", context, traceID)
+							err := env.HandleEvent("test", context)
 							Expect(err).To(MatchError(ContainSubstring("arguments")))
 						})
 					})
@@ -1370,7 +1366,7 @@ var _ = Describe("Otto extension manager", func() {
 						})
 
 						It("Returns the proper error", func() {
-							err := env.HandleEvent("test", context, traceID)
+							err := env.HandleEvent("test", context)
 							Expect(err).To(MatchError(ContainSubstring("Unknown schema")))
 						})
 					})
@@ -1387,7 +1383,7 @@ var _ = Describe("Otto extension manager", func() {
 							defer tx.Close()
 							context["transaction"] = tx
 
-							err = env.HandleEvent("test", context, traceID)
+							err = env.HandleEvent("test", context)
 							Expect(err).To(MatchError(ContainSubstring("be of type 'Object'")))
 						})
 					})
@@ -1424,7 +1420,7 @@ var _ = Describe("Otto extension manager", func() {
 							defer tx.Close()
 							context["transaction"] = tx
 
-							Expect(env.HandleEvent("test", context, traceID)).To(Succeed())
+							Expect(env.HandleEvent("test", context)).To(Succeed())
 							Expect(tx.Commit()).To(Succeed())
 						})
 					})
@@ -1443,7 +1439,7 @@ var _ = Describe("Otto extension manager", func() {
 							defer tx.Close()
 							context["transaction"] = tx
 
-							Expect(env.HandleEvent("test", context, traceID)).To(Succeed())
+							Expect(env.HandleEvent("test", context)).To(Succeed())
 							Expect(context["exception"]).To(HaveKeyWithValue("message", ContainSubstring("Labori inteligente")))
 							Expect(context["exception_message"]).To(ContainSubstring("Labori inteligente"))
 						})
@@ -1458,7 +1454,7 @@ var _ = Describe("Otto extension manager", func() {
 						})
 
 						It("Returns the proper error", func() {
-							err := env.HandleEvent("test", context, traceID)
+							err := env.HandleEvent("test", context)
 							Expect(err).To(MatchError(ContainSubstring("arguments")))
 						})
 					})
@@ -1470,7 +1466,7 @@ var _ = Describe("Otto extension manager", func() {
 						})
 
 						It("Returns the proper error", func() {
-							err := env.HandleEvent("test", context, traceID)
+							err := env.HandleEvent("test", context)
 							Expect(err).To(MatchError(ContainSubstring("Unknown schema")))
 						})
 					})
@@ -1600,7 +1596,7 @@ var _ = Describe("Otto extension manager", func() {
 							Expect(err).NotTo(HaveOccurred())
 							createNetworkContext["transaction"] = tx
 							By("Creating the network")
-							Expect(env.HandleEvent("test", createNetworkContext, traceID)).To(Succeed())
+							Expect(env.HandleEvent("test", createNetworkContext)).To(Succeed())
 							tx.Commit()
 							tx.Close()
 							By("network created")
@@ -1613,7 +1609,7 @@ var _ = Describe("Otto extension manager", func() {
 							readSubnetContext["transaction"] = tx
 
 							By("Also creating a default subnet for it")
-							Expect(subnetEnv.HandleEvent("test_subnet", readSubnetContext, traceID)).To(Succeed())
+							Expect(subnetEnv.HandleEvent("test_subnet", readSubnetContext)).To(Succeed())
 							tx.Close()
 							for key, value := range subnet1 {
 								Expect(readSubnetContext).To(HaveKey("subnet"))
@@ -1643,7 +1639,7 @@ var _ = Describe("Otto extension manager", func() {
 							defer tx.Close()
 							createNetworkContext["transaction"] = tx
 
-							Expect(env.HandleEvent("test", createNetworkContext, traceID)).To(Succeed())
+							Expect(env.HandleEvent("test", createNetworkContext)).To(Succeed())
 							Expect(createNetworkContext["exception"]).To(HaveKeyWithValue("message", ContainSubstring("Minas Tirith has fallen!")))
 							Expect(createNetworkContext["exception_message"]).To(ContainSubstring("Minas Tirith has fallen!"))
 						})
@@ -1709,8 +1705,8 @@ var _ = Describe("Otto extension manager", func() {
 			Expect(env1.LoadExtensionsForPath(extensions, timeLimit, timeLimits, "test_path")).To(Succeed())
 			Expect(env2.LoadExtensionsForPath(extensions, timeLimit, timeLimits, "test_path")).To(Succeed())
 			context := map[string]interface{}{}
-			Expect(env1.HandleEvent("test_event", context, traceID)).To(Succeed())
-			Expect(env2.HandleEvent("test_event", context, traceID)).To(Succeed())
+			Expect(env1.HandleEvent("test_event", context)).To(Succeed())
+			Expect(env2.HandleEvent("test_event", context)).To(Succeed())
 			Expect(context["resp"]).To(Equal(int64(123)))
 		})
 
@@ -1750,8 +1746,8 @@ var _ = Describe("Otto extension manager", func() {
 			Expect(env2.LoadExtensionsForPath(env2Extensions, timeLimit, timeLimits, "test_path")).To(Succeed())
 			env1Context := map[string]interface{}{}
 			env2Context := map[string]interface{}{}
-			Expect(env1.HandleEvent("test_event", env1Context, traceID)).To(Succeed())
-			Expect(env2.HandleEvent("test_event", env2Context, traceID)).To(Succeed())
+			Expect(env1.HandleEvent("test_event", env1Context)).To(Succeed())
+			Expect(env2.HandleEvent("test_event", env2Context)).To(Succeed())
 			Expect(env1Context["resp"]).To(Equal(int64(123)))
 			Expect(env2Context["resp"]).To(Equal(int64(456)))
 		})
@@ -1778,8 +1774,8 @@ var _ = Describe("Otto extension manager", func() {
 			Expect(env2.LoadExtensionsForPath(extensions, timeLimit, timeLimits, "test_path")).To(Succeed())
 			env1Context := map[string]interface{}{}
 			env2Context := map[string]interface{}{}
-			Expect(env1.HandleEvent("test_event", env1Context, traceID)).To(Succeed())
-			Expect(env2.HandleEvent("test_event", env2Context, traceID)).To(Succeed())
+			Expect(env1.HandleEvent("test_event", env1Context)).To(Succeed())
+			Expect(env2.HandleEvent("test_event", env2Context)).To(Succeed())
 			Expect(env1Context["resp"]).To(Equal(int64(123)))
 			Expect(env2Context["resp"]).To(Equal(int64(123)))
 		})
@@ -1809,7 +1805,7 @@ var _ = Describe("Otto extension manager", func() {
 			env := newEnvironment()
 			context := map[string]interface{}{}
 			Expect(env.LoadExtensionsForPath(extensions, timeLimit, timeLimits, "test_path")).To(Succeed())
-			Expect(env.HandleEvent("test_event", context, traceID)).To(Succeed())
+			Expect(env.HandleEvent("test_event", context)).To(Succeed())
 			Expect(context["resp"]).To(Equal("123"))
 		})
 
@@ -1830,7 +1826,7 @@ var _ = Describe("Otto extension manager", func() {
 			env := newEnvironment()
 			context := map[string]interface{}{}
 			Expect(env.LoadExtensionsForPath(extensions, timeLimit, timeLimits, "test_path")).To(Succeed())
-			Expect(env.HandleEvent("test_event", context, traceID)).To(Succeed())
+			Expect(env.HandleEvent("test_event", context)).To(Succeed())
 			Expect(context["resp"]).To(Equal("321"))
 		})
 	})
@@ -1875,9 +1871,9 @@ var _ = Describe("Otto extension manager", func() {
 			env := newEnvironment()
 			Expect(env.LoadExtensionsForPath(extensions, timeLimit, timeLimits, "hook")).To(Succeed())
 			context := map[string]interface{}{}
-			Expect(env.HandleEvent("reg_hook", context, traceID)).To(Succeed())
+			Expect(env.HandleEvent("reg_hook", context)).To(Succeed())
 			Expect(env.LoadExtensionsForPath(extensions, timeLimit, timeLimits, "test_path")).To(Succeed())
-			Expect(env.HandleEvent("test_event", context, traceID)).To(Succeed())
+			Expect(env.HandleEvent("test_event", context)).To(Succeed())
 			Expect(context["resp"]).To(Equal(int64(321)))
 		})
 	})
@@ -1903,7 +1899,7 @@ var _ = Describe("Otto extension manager", func() {
 			context := map[string]interface{}{}
 			env.Sync.Delete("/gohan_sync_fetch_test", false)
 			env.Sync.Update("/gohan_sync_fetch_test", "{}")
-			Expect(env.HandleEvent("test_event", context, traceID)).To(Succeed())
+			Expect(env.HandleEvent("test_event", context)).To(Succeed())
 			Expect(context).To(HaveKeyWithValue("resp", HaveKeyWithValue("value", "{}")))
 		})
 	})
@@ -1928,7 +1924,7 @@ var _ = Describe("Otto extension manager", func() {
 
 			context := map[string]interface{}{}
 			env.Sync.Delete("/gohan_sync_watch_test", false)
-			Expect(env.HandleEvent("test_event", context, traceID)).To(Succeed())
+			Expect(env.HandleEvent("test_event", context)).To(Succeed())
 			Expect(context).To(HaveKeyWithValue("resp", HaveLen(0)))
 		})
 
@@ -1956,7 +1952,7 @@ var _ = Describe("Otto extension manager", func() {
 				time.Sleep(time.Duration(200) * time.Millisecond)
 				env.Sync.Update("/gohan_sync_watch_test", "{}")
 			}()
-			Expect(env.HandleEvent("test_event", context, traceID)).To(Succeed())
+			Expect(env.HandleEvent("test_event", context)).To(Succeed())
 			Expect(context).To(HaveKeyWithValue("resp", HaveKeyWithValue("action", "set")))
 			Expect(context).To(HaveKeyWithValue("resp", HaveKeyWithValue("key", "/gohan_sync_watch_test")))
 			Expect(context).To(HaveKeyWithValue("resp", HaveKeyWithValue("data", map[string]interface{}{})))
@@ -1984,7 +1980,7 @@ var _ = Describe("Otto extension manager", func() {
 			context := map[string]interface{}{}
 			env.Sync.Delete("/gohan_sync_delete_test", false)
 			env.Sync.Update("/gohan_sync_delete_test", "{}")
-			Expect(env.HandleEvent("test_event", context, traceID)).To(Succeed())
+			Expect(env.HandleEvent("test_event", context)).To(Succeed())
 			node, err := env.Sync.Fetch("/gohan_sync_delete_test")
 			Expect(err).To(HaveOccurred())
 			Expect(node).To(BeNil())
@@ -2013,7 +2009,7 @@ var _ = Describe("Otto extension manager", func() {
 			env.Sync.Delete("/gohan_sync_delete_test", true)
 			env.Sync.Update("/gohan_sync_delete_test/child1", "bla")
 			env.Sync.Update("/gohan_sync_delete_test/child2", "bar")
-			Expect(env.HandleEvent("test_event", context, traceID)).To(Succeed())
+			Expect(env.HandleEvent("test_event", context)).To(Succeed())
 			node, err := env.Sync.Fetch("/gohan_sync_delete_test")
 			Expect(err).To(HaveOccurred())
 			Expect(node).To(BeNil())
@@ -2115,7 +2111,7 @@ var _ = Describe("Otto extension manager", func() {
 				context := map[string]interface{}{
 					"id": "test",
 				}
-				Expect(env.HandleEvent("test_event", context, traceID)).ToNot(Succeed())
+				Expect(env.HandleEvent("test_event", context)).ToNot(Succeed())
 			})
 		})
 	})
@@ -2128,8 +2124,6 @@ var _ = Describe("Using gohan_file builtin", func() {
 
 		timeLimit  time.Duration
 		timeLimits []*schema.PathEventTimeLimit
-
-		traceID string
 	)
 
 	BeforeEach(func() {
@@ -2140,8 +2134,6 @@ var _ = Describe("Using gohan_file builtin", func() {
 
 		timeLimit = time.Duration(10) * time.Second
 		timeLimits = []*schema.PathEventTimeLimit{}
-
-		traceID = "1234-5678-90AB-CDEF"
 	})
 
 	Context("List files", func() {
@@ -2158,7 +2150,7 @@ var _ = Describe("Using gohan_file builtin", func() {
 			extensions := []*schema.Extension{extension}
 			Expect(env.LoadExtensionsForPath(extensions, timeLimit, timeLimits, "test_path")).To(Succeed())
 
-			Expect(env.HandleEvent("test_event", context, traceID)).To(Succeed())
+			Expect(env.HandleEvent("test_event", context)).To(Succeed())
 			Expect(context).To(HaveKey("list"))
 			Expect(context["list"]).ToNot(BeNil())
 		})
@@ -2175,7 +2167,7 @@ var _ = Describe("Using gohan_file builtin", func() {
 			extensions := []*schema.Extension{extension}
 			Expect(env.LoadExtensionsForPath(extensions, timeLimit, timeLimits, "test_path")).To(Succeed())
 
-			Expect(env.HandleEvent("test_event", context, traceID)).ToNot(Succeed())
+			Expect(env.HandleEvent("test_event", context)).ToNot(Succeed())
 			Expect(context).ToNot(HaveKey("list"))
 		})
 	})
@@ -2193,7 +2185,7 @@ var _ = Describe("Using gohan_file builtin", func() {
 			extensions := []*schema.Extension{extension}
 			Expect(env.LoadExtensionsForPath(extensions, timeLimit, timeLimits, "test_path")).To(Succeed())
 
-			Expect(env.HandleEvent("test_event", context, traceID)).To(Succeed())
+			Expect(env.HandleEvent("test_event", context)).To(Succeed())
 			Expect(context).To(HaveKey("list"))
 			Expect(context["list"]).ToNot(BeNil())
 		})
@@ -2210,7 +2202,7 @@ var _ = Describe("Using gohan_file builtin", func() {
 			extensions := []*schema.Extension{extension}
 			Expect(env.LoadExtensionsForPath(extensions, timeLimit, timeLimits, "test_path")).To(Succeed())
 
-			Expect(env.HandleEvent("test_event", context, traceID)).ToNot(Succeed())
+			Expect(env.HandleEvent("test_event", context)).ToNot(Succeed())
 			Expect(context).ToNot(HaveKey("list"))
 		})
 	})
@@ -2228,7 +2220,7 @@ var _ = Describe("Using gohan_file builtin", func() {
 			extensions := []*schema.Extension{extension}
 			Expect(env.LoadExtensionsForPath(extensions, timeLimit, timeLimits, "test_path")).To(Succeed())
 
-			Expect(env.HandleEvent("test_event", context, traceID)).To(Succeed())
+			Expect(env.HandleEvent("test_event", context)).To(Succeed())
 			Expect(context).To(HaveKey("list"))
 			Expect(context["list"]).ToNot(BeNil())
 		})
@@ -2245,7 +2237,7 @@ var _ = Describe("Using gohan_file builtin", func() {
 			extensions := []*schema.Extension{extension}
 			Expect(env.LoadExtensionsForPath(extensions, timeLimit, timeLimits, "test_path")).To(Succeed())
 
-			Expect(env.HandleEvent("test_event", context, traceID)).ToNot(Succeed())
+			Expect(env.HandleEvent("test_event", context)).ToNot(Succeed())
 			Expect(context).ToNot(HaveKey("list"))
 		})
 	})
@@ -2263,7 +2255,7 @@ var _ = Describe("Using gohan_file builtin", func() {
 			extensions := []*schema.Extension{extension}
 			Expect(env.LoadExtensionsForPath(extensions, timeLimit, timeLimits, "test_path")).To(Succeed())
 
-			Expect(env.HandleEvent("test_event", context, traceID)).To(Succeed())
+			Expect(env.HandleEvent("test_event", context)).To(Succeed())
 			Expect(context).To(HaveKeyWithValue("dir", true))
 		})
 		It("Isn't dir", func() {
@@ -2279,7 +2271,7 @@ var _ = Describe("Using gohan_file builtin", func() {
 			extensions := []*schema.Extension{extension}
 			Expect(env.LoadExtensionsForPath(extensions, timeLimit, timeLimits, "test_path")).To(Succeed())
 
-			Expect(env.HandleEvent("test_event", context, traceID)).To(Succeed())
+			Expect(env.HandleEvent("test_event", context)).To(Succeed())
 			Expect(context).To(HaveKeyWithValue("dir", false))
 		})
 		It("Shouldn't work", func() {
@@ -2295,7 +2287,7 @@ var _ = Describe("Using gohan_file builtin", func() {
 			extensions := []*schema.Extension{extension}
 			Expect(env.LoadExtensionsForPath(extensions, timeLimit, timeLimits, "test_path")).To(Succeed())
 
-			Expect(env.HandleEvent("test_event", context, traceID)).ToNot(Succeed())
+			Expect(env.HandleEvent("test_event", context)).ToNot(Succeed())
 			Expect(context).ToNot(HaveKey("dir"))
 		})
 	})
