@@ -169,19 +169,19 @@ func ApplyPolicyForResource(context middleware.Context, resourceSchema *schema.S
 }
 
 //GetResources returns specified resources without calling non in_transaction events
-func GetResources(context middleware.Context, dataStore db.DB, resourceSchema *schema.Schema, filter map[string]interface{}, paginator *pagination.Paginator) error {
+func GetResources(context middleware.Context, dataStore db.DB, resourceSchema *schema.Schema, filter map[string]interface{}, paginator *pagination.Paginator, traceID string) error {
 	defer measureRequestTime(time.Now(), "get.resources", resourceSchema.ID)
 	return resourceTransactionWithContext(
 		context, dataStore,
 		transaction.GetIsolationLevel(resourceSchema, schema.ActionRead),
 		func() error {
-			return GetResourcesInTransaction(context, resourceSchema, filter, paginator)
+			return GetResourcesInTransaction(context, resourceSchema, filter, paginator, traceID)
 		},
 	)
 }
 
 //GetResourcesInTransaction returns specified resources without calling non in_transaction events
-func GetResourcesInTransaction(context middleware.Context, resourceSchema *schema.Schema, filter map[string]interface{}, paginator *pagination.Paginator) error {
+func GetResourcesInTransaction(context middleware.Context, resourceSchema *schema.Schema, filter map[string]interface{}, paginator *pagination.Paginator, traceID string) error {
 	defer measureRequestTime(time.Now(), "get.resources.in_tx", resourceSchema.ID)
 	mainTransaction := context["transaction"].(transaction.Transaction)
 	response := map[string]interface{}{}
@@ -192,7 +192,7 @@ func GetResourcesInTransaction(context middleware.Context, resourceSchema *schem
 		return fmt.Errorf("no environment for schema")
 	}
 
-	if err := extension.HandleEvent(context, environment, "pre_list_in_transaction", resourceSchema.ID); err != nil {
+	if err := extension.HandleEvent(context, environment, "pre_list_in_transaction", resourceSchema.ID, traceID); err != nil {
 		return err
 	}
 
@@ -222,7 +222,7 @@ func GetResourcesInTransaction(context middleware.Context, resourceSchema *schem
 	context["response"] = response
 	context["total"] = total
 
-	if err := extension.HandleEvent(context, environment, "post_list_in_transaction", resourceSchema.ID); err != nil {
+	if err := extension.HandleEvent(context, environment, "post_list_in_transaction", resourceSchema.ID, traceID); err != nil {
 		return err
 	}
 	return nil
@@ -264,7 +264,8 @@ func parseBool(s string, d bool) bool {
 // GetMultipleResources returns all resources specified by the schema and query parameters
 func GetMultipleResources(context middleware.Context, dataStore db.DB, resourceSchema *schema.Schema, queryParameters map[string][]string) error {
 	defer measureRequestTime(time.Now(), "get.resources.multiple", resourceSchema.ID)
-	log.Debug("Start get multiple resources!!")
+	traceID := uuid.NewV4().String()
+	log.Debug("[%s] Start get multiple resources!!", traceID)
 	auth := context["auth"].(schema.Authorization)
 	policy, err := loadPolicy(context, "read", resourceSchema.GetPluralURL(), auth)
 	if err != nil {
@@ -286,7 +287,7 @@ func GetMultipleResources(context middleware.Context, dataStore db.DB, resourceS
 	if !ok {
 		return fmt.Errorf("No environment for schema")
 	}
-	if err := extension.HandleEvent(context, environment, "pre_list", resourceSchema.ID); err != nil {
+	if err := extension.HandleEvent(context, environment, "pre_list", resourceSchema.ID, traceID); err != nil {
 		return err
 	}
 	if rawResponse, ok := context["response"]; ok {
@@ -296,11 +297,11 @@ func GetMultipleResources(context middleware.Context, dataStore db.DB, resourceS
 		return fmt.Errorf("extension returned invalid JSON: %v", rawResponse)
 	}
 
-	if err := GetResources(context, dataStore, resourceSchema, filter, paginator); err != nil {
+	if err := GetResources(context, dataStore, resourceSchema, filter, paginator, traceID); err != nil {
 		return err
 	}
 
-	if err := extension.HandleEvent(context, environment, "post_list", resourceSchema.ID); err != nil {
+	if err := extension.HandleEvent(context, environment, "post_list", resourceSchema.ID, traceID); err != nil {
 		return err
 	}
 
@@ -315,6 +316,7 @@ func GetMultipleResources(context middleware.Context, dataStore db.DB, resourceS
 func GetSingleResource(context middleware.Context, dataStore db.DB, resourceSchema *schema.Schema, resourceID string) error {
 	defer measureRequestTime(time.Now(), "get.single", resourceSchema.ID)
 
+	traceID := uuid.NewV4().String()
 	context["id"] = resourceID
 	auth := context["auth"].(schema.Authorization)
 	policy, err := loadPolicy(context, "read", strings.Replace(resourceSchema.GetSingleURL(), ":id", resourceID, 1), auth)
@@ -328,7 +330,7 @@ func GetSingleResource(context middleware.Context, dataStore db.DB, resourceSche
 	if !ok {
 		return fmt.Errorf("No environment for schema")
 	}
-	if err := extension.HandleEvent(context, environment, "pre_show", resourceSchema.ID); err != nil {
+	if err := extension.HandleEvent(context, environment, "pre_show", resourceSchema.ID, traceID); err != nil {
 		return err
 	}
 	if rawResponse, ok := context["response"]; ok {
@@ -342,13 +344,13 @@ func GetSingleResource(context middleware.Context, dataStore db.DB, resourceSche
 		context, dataStore,
 		transaction.GetIsolationLevel(resourceSchema, schema.ActionRead),
 		func() error {
-			return GetSingleResourceInTransaction(context, resourceSchema, resourceID, policy.GetTenantIDFilter(schema.ActionRead, auth.TenantID()))
+			return GetSingleResourceInTransaction(context, resourceSchema, resourceID, policy.GetTenantIDFilter(schema.ActionRead, auth.TenantID()), traceID)
 		},
 	); err != nil {
 		return err
 	}
 
-	if err := extension.HandleEvent(context, environment, "post_show", resourceSchema.ID); err != nil {
+	if err := extension.HandleEvent(context, environment, "post_show", resourceSchema.ID, traceID); err != nil {
 		return err
 	}
 	if err := ApplyPolicyForResource(context, resourceSchema); err != nil {
@@ -359,7 +361,7 @@ func GetSingleResource(context middleware.Context, dataStore db.DB, resourceSche
 }
 
 //GetSingleResourceInTransaction get resource in single transaction
-func GetSingleResourceInTransaction(context middleware.Context, resourceSchema *schema.Schema, resourceID string, tenantIDs []string) (err error) {
+func GetSingleResourceInTransaction(context middleware.Context, resourceSchema *schema.Schema, resourceID string, tenantIDs []string, traceID string) (err error) {
 	defer measureRequestTime(time.Now(), "get.single.in_tx", resourceSchema.ID)
 	var options *transaction.ViewOptions
 	r, ok := context["http_request"].(*http.Request)
@@ -373,7 +375,7 @@ func GetSingleResourceInTransaction(context middleware.Context, resourceSchema *
 		return fmt.Errorf("no environment for schema")
 	}
 
-	if err := extension.HandleEvent(context, environment, "pre_show_in_transaction", resourceSchema.ID); err != nil {
+	if err := extension.HandleEvent(context, environment, "pre_show_in_transaction", resourceSchema.ID, traceID); err != nil {
 		return err
 	}
 	if rawResponse, ok := context["response"]; ok {
@@ -390,10 +392,10 @@ func GetSingleResourceInTransaction(context middleware.Context, resourceSchema *
 	if object == nil {
 		switch err {
 		case transaction.ErrResourceNotFound:
-			log.Info("Fetch failed: %v", err)
+			log.Info("[%s] Fetch failed: %v", traceID, err)
 			return ResourceError{err, "Resource not found", NotFound}
 		default:
-			log.Error("Fetch failed: %v", err)
+			log.Error("[%s] Fetch failed: %v", traceID, err)
 			return ResourceError{err, "Error when fetching resource", InternalServerError}
 		}
 	}
@@ -402,7 +404,7 @@ func GetSingleResourceInTransaction(context middleware.Context, resourceSchema *
 	response[resourceSchema.Singular] = object.Data()
 	context["response"] = response
 
-	if err := extension.HandleEvent(context, environment, "post_show_in_transaction", resourceSchema.ID); err != nil {
+	if err := extension.HandleEvent(context, environment, "post_show_in_transaction", resourceSchema.ID, traceID); err != nil {
 		return err
 	}
 	return
@@ -462,6 +464,8 @@ func CreateResource(
 	dataMap map[string]interface{},
 ) error {
 	defer measureRequestTime(time.Now(), "create", resourceSchema.ID)
+
+	traceID := uuid.NewV4().String()
 	manager := schema.GetManager()
 	// Load environment
 	environmentManager := extension.GetManager()
@@ -509,7 +513,7 @@ func CreateResource(
 	context["id"] = dataMap["id"]
 	context["schema_id"] = resourceSchema.ID
 
-	if err := extension.HandleEvent(context, environment, "pre_create", resourceSchema.ID); err != nil {
+	if err := extension.HandleEvent(context, environment, "pre_create", resourceSchema.ID, traceID); err != nil {
 		return err
 	}
 
@@ -540,13 +544,13 @@ func CreateResource(
 		context, dataStore,
 		transaction.GetIsolationLevel(resourceSchema, schema.ActionCreate),
 		func() error {
-			return CreateResourceInTransaction(context, resource)
+			return CreateResourceInTransaction(context, resource, traceID)
 		},
 	); err != nil {
 		return err
 	}
 
-	if err := extension.HandleEvent(context, environment, "post_create", resourceSchema.ID); err != nil {
+	if err := extension.HandleEvent(context, environment, "post_create", resourceSchema.ID, traceID); err != nil {
 		return err
 	}
 
@@ -557,7 +561,7 @@ func CreateResource(
 }
 
 //CreateResourceInTransaction create db resource model in transaction
-func CreateResourceInTransaction(context middleware.Context, resource *schema.Resource) error {
+func CreateResourceInTransaction(context middleware.Context, resource *schema.Resource, traceID string) error {
 	defer measureRequestTime(time.Now(), "create.in_tx", resource.Schema().ID)
 	resourceSchema := resource.Schema()
 	mainTransaction := context["transaction"].(transaction.Transaction)
@@ -566,11 +570,11 @@ func CreateResourceInTransaction(context middleware.Context, resource *schema.Re
 	if !ok {
 		return fmt.Errorf("No environment for schema")
 	}
-	if err := extension.HandleEvent(context, environment, "pre_create_in_transaction", resourceSchema.ID); err != nil {
+	if err := extension.HandleEvent(context, environment, "pre_create_in_transaction", resourceSchema.ID, traceID); err != nil {
 		return err
 	}
 	if err := mainTransaction.Create(resource); err != nil {
-		log.Debug("%s transaction error", err)
+		log.Debug("[%s] %s transaction error", traceID, err)
 		return ResourceError{
 			err,
 			fmt.Sprintf("Failed to store data in database: %v", err),
@@ -581,7 +585,7 @@ func CreateResourceInTransaction(context middleware.Context, resource *schema.Re
 	response[resourceSchema.Singular] = resource.Data()
 	context["response"] = response
 
-	if err := extension.HandleEvent(context, environment, "post_create_in_transaction", resourceSchema.ID); err != nil {
+	if err := extension.HandleEvent(context, environment, "post_create_in_transaction", resourceSchema.ID, traceID); err != nil {
 		return err
 	}
 
@@ -596,6 +600,8 @@ func UpdateResource(
 	resourceID string, dataMap map[string]interface{},
 ) error {
 	defer measureRequestTime(time.Now(), "update", resourceSchema.ID)
+
+	traceID := uuid.NewV4().String()
 	context["id"] = resourceID
 
 	//load environment
@@ -630,7 +636,7 @@ func UpdateResource(
 	}
 	context["resource"] = dataMap
 
-	if err := extension.HandleEvent(context, environment, "pre_update", resourceSchema.ID); err != nil {
+	if err := extension.HandleEvent(context, environment, "pre_update", resourceSchema.ID, traceID); err != nil {
 		return err
 	}
 
@@ -642,13 +648,13 @@ func UpdateResource(
 		context, dataStore,
 		transaction.GetIsolationLevel(resourceSchema, schema.ActionUpdate),
 		func() error {
-			return UpdateResourceInTransaction(context, resourceSchema, resourceID, dataMap, policy.GetTenantIDFilter(schema.ActionUpdate, auth.TenantID()))
+			return UpdateResourceInTransaction(context, resourceSchema, resourceID, dataMap, policy.GetTenantIDFilter(schema.ActionUpdate, auth.TenantID()), traceID)
 		},
 	); err != nil {
 		return err
 	}
 
-	if err := extension.HandleEvent(context, environment, "post_update", resourceSchema.ID); err != nil {
+	if err := extension.HandleEvent(context, environment, "post_update", resourceSchema.ID, traceID); err != nil {
 		return err
 	}
 
@@ -662,9 +668,8 @@ func UpdateResource(
 func UpdateResourceInTransaction(
 	context middleware.Context,
 	resourceSchema *schema.Schema, resourceID string,
-	dataMap map[string]interface{}, tenantIDs []string) error {
+	dataMap map[string]interface{}, tenantIDs []string, traceID string) error {
 	defer measureRequestTime(time.Now(), "update.in_tx", resourceSchema.ID)
-
 	manager := schema.GetManager()
 	mainTransaction := context["transaction"].(transaction.Transaction)
 	environmentManager := extension.GetManager()
@@ -705,7 +710,7 @@ func UpdateResourceInTransaction(
 	}
 	context["resource"] = resource.Data()
 
-	if err := extension.HandleEvent(context, environment, "pre_update_in_transaction", resourceSchema.ID); err != nil {
+	if err := extension.HandleEvent(context, environment, "pre_update_in_transaction", resourceSchema.ID, traceID); err != nil {
 		return err
 	}
 
@@ -727,7 +732,7 @@ func UpdateResourceInTransaction(
 	response[resourceSchema.Singular] = resource.Data()
 	context["response"] = response
 
-	if err := extension.HandleEvent(context, environment, "post_update_in_transaction", resourceSchema.ID); err != nil {
+	if err := extension.HandleEvent(context, environment, "post_update_in_transaction", resourceSchema.ID, traceID); err != nil {
 		return err
 	}
 
@@ -741,6 +746,7 @@ func DeleteResource(context middleware.Context,
 	resourceID string,
 ) error {
 	defer measureRequestTime(time.Now(), "delete", resourceSchema.ID)
+	traceID := uuid.NewV4().String()
 	context["id"] = resourceID
 	environmentManager := extension.GetManager()
 	environment, ok := environmentManager.GetEnvironment(resourceSchema.ID)
@@ -773,16 +779,16 @@ func DeleteResource(context middleware.Context,
 		context["resource"] = resource.Data()
 	}
 
-	if err := extension.HandleEvent(context, environment, "pre_delete", resourceSchema.ID); err != nil {
+	if err := extension.HandleEvent(context, environment, "pre_delete", resourceSchema.ID, traceID); err != nil {
 		return err
 	}
 	if resource == nil {
 		switch fetchErr {
 		case transaction.ErrResourceNotFound:
-			log.Info("Fetch failed: %v", fetchErr)
+			log.Info("[%s] Fetch failed: %v", traceID, fetchErr)
 			return ResourceError{fetchErr, "Resource not found", NotFound}
 		default:
-			log.Error("Fetch failed: %v", fetchErr)
+			log.Error("[%s] Fetch failed: %v", traceID, fetchErr)
 			return ResourceError{fetchErr, "Error when fetching resource", InternalServerError}
 		}
 	}
@@ -790,19 +796,19 @@ func DeleteResource(context middleware.Context,
 		context, dataStore,
 		transaction.GetIsolationLevel(resourceSchema, schema.ActionDelete),
 		func() error {
-			return DeleteResourceInTransaction(context, resourceSchema, resourceID)
+			return DeleteResourceInTransaction(context, resourceSchema, resourceID, traceID)
 		},
 	); err != nil {
 		return err
 	}
-	if err := extension.HandleEvent(context, environment, "post_delete", resourceSchema.ID); err != nil {
+	if err := extension.HandleEvent(context, environment, "post_delete", resourceSchema.ID, traceID); err != nil {
 		return err
 	}
 	return nil
 }
 
 //DeleteResourceInTransaction deletes resources in a transaction
-func DeleteResourceInTransaction(context middleware.Context, resourceSchema *schema.Schema, resourceID string) error {
+func DeleteResourceInTransaction(context middleware.Context, resourceSchema *schema.Schema, resourceID string, traceID string) error {
 	defer measureRequestTime(time.Now(), "delete.in_tx", resourceSchema.ID)
 	mainTransaction := context["transaction"].(transaction.Transaction)
 	environmentManager := extension.GetManager()
@@ -830,7 +836,7 @@ func DeleteResourceInTransaction(context middleware.Context, resourceSchema *sch
 		resource, err = mainTransaction.LockFetch(resourceSchema, filter, schema.SkipRelatedResources, nil)
 	}
 
-	log.Debug("%s %s", resource, err)
+	log.Debug("[%s] %s %s", traceID, resource, err)
 	if err != nil {
 		return err
 	}
@@ -843,7 +849,7 @@ func DeleteResourceInTransaction(context middleware.Context, resourceSchema *sch
 		return ResourceError{err, "", Unauthorized}
 	}
 
-	if err := extension.HandleEvent(context, environment, "pre_delete_in_transaction", resourceSchema.ID); err != nil {
+	if err := extension.HandleEvent(context, environment, "pre_delete_in_transaction", resourceSchema.ID, traceID); err != nil {
 		return err
 	}
 
@@ -852,7 +858,7 @@ func DeleteResourceInTransaction(context middleware.Context, resourceSchema *sch
 		return ResourceError{err, "", DeleteFailed}
 	}
 
-	if err := extension.HandleEvent(context, environment, "post_delete_in_transaction", resourceSchema.ID); err != nil {
+	if err := extension.HandleEvent(context, environment, "post_delete_in_transaction", resourceSchema.ID, traceID); err != nil {
 		return err
 	}
 	return nil
@@ -863,6 +869,8 @@ func ActionResource(context middleware.Context, dataStore db.DB, identityService
 	resourceSchema *schema.Schema, action schema.Action, resourceID string, data interface{},
 ) error {
 	defer measureRequestTime(time.Now(), action.ID, resourceSchema.ID)
+
+	traceID := uuid.NewV4().String()
 	actionSchema := action.InputSchema
 	context["input"] = data
 	context["id"] = resourceID
@@ -880,7 +888,7 @@ func ActionResource(context middleware.Context, dataStore db.DB, identityService
 		}
 	}
 
-	err := extension.HandleEvent(context, environment, action.ID, resourceSchema.ID)
+	err := extension.HandleEvent(context, environment, action.ID, resourceSchema.ID, traceID)
 	if err != nil {
 		return err
 	}

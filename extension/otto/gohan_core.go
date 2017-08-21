@@ -103,9 +103,13 @@ func init() {
 				}else{
 					log.Panic("gohan_trigger_event: schema not found")
 				}
-
+				traceIDValue, err := vm.Get("gohan_caller")
+				if err != nil {
+					log.Error("Error when getting uuid", err)
+				}
+				traceID, _ := traceIDValue.ToString()
 				envManager := extension.GetManager()
-				envManager.HandleEventInAllEnvironments(context, event, schemaID)
+				envManager.HandleEventInAllEnvironments(context, event, schemaID, traceID)
 
 				value, _ := vm.ToValue(nil)
 
@@ -188,11 +192,11 @@ func init() {
 		  gohan_log_debug("REG: id=" + handlerUUID + ", type=" + event_type.toString() +
 				", index=" + (gohan_handler[event_type].length - 1).toString())
 		}
-		function gohan_handle_event(event_type, context){
+		function gohan_handle_event(event_type, context, traceID){
 		  if(_.isUndefined(gohan_handler[event_type])){
 		    return;
 		  }
-		  gohan_caller = gohan_uuid();
+		  gohan_caller = traceID;
 		  for (var i = 0; i < gohan_handler[event_type].length; ++i) {
 		    try {
 		      var old_module = gohan_log_module_push(event_type);

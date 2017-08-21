@@ -30,6 +30,7 @@ import (
 	"github.com/cloudwan/gohan/sync"
 	"github.com/drone/routes"
 	"github.com/go-martini/martini"
+	"github.com/twinj/uuid"
 )
 
 var (
@@ -397,7 +398,8 @@ func MapRouteBySchema(server *Server, dataStore db.DB, s *schema.Schema) {
 //MapRouteBySchemas setup route for all loaded schema
 func MapRouteBySchemas(server *Server, dataStore db.DB) {
 	route := server.martini
-	log.Debug("[Initializing Routes]")
+	traceID := uuid.NewV4().String()
+	log.Debug("[%s] [Initializing Routes]", traceID)
 	schemaManager := schema.GetManager()
 	route.Get("/_all", func(w http.ResponseWriter, r *http.Request, p martini.Params, auth schema.Authorization) {
 		responses := make(map[string]interface{})
@@ -421,7 +423,7 @@ func MapRouteBySchemas(server *Server, dataStore db.DB) {
 				context, dataStore,
 				s,
 				resources.FilterFromQueryParameter(s, r.URL.Query()),
-				nil,
+				nil, traceID,
 			); err != nil {
 				handleError(w, err)
 				return

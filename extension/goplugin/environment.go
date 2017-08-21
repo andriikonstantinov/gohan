@@ -106,6 +106,8 @@ type Environment struct {
 
 	initFnRaw plugin.Symbol
 	initFns   []func(goext.IEnvironment) error
+
+	traceID string
 }
 
 // NewEnvironment create new gohan extension rawEnvironment based on context
@@ -144,6 +146,14 @@ func (thisEnvironment *Environment) Database() goext.IDatabase {
 	return thisEnvironment.extDatabase
 }
 
+func (thisEnvironment *Environment) SetEnvBindings() {
+	thisEnvironment.extCore = NewCore(thisEnvironment)
+	thisEnvironment.extLogger = NewLogger(thisEnvironment)
+	thisEnvironment.extSchemas = NewSchemas(thisEnvironment)
+	thisEnvironment.extSync = NewSync(thisEnvironment)
+	thisEnvironment.extDatabase = NewDB(thisEnvironment)
+}
+
 // Start starts already loaded environment
 func (thisEnvironment *Environment) Start() error {
 	var err error
@@ -170,11 +180,7 @@ func (thisEnvironment *Environment) Start() error {
 	thisEnvironment.manager = schema.GetManager()
 
 	// Bind
-	thisEnvironment.extCore = NewCore(thisEnvironment)
-	thisEnvironment.extLogger = NewLogger(thisEnvironment)
-	thisEnvironment.extSchemas = NewSchemas(thisEnvironment)
-	thisEnvironment.extSync = NewSync(thisEnvironment)
-	thisEnvironment.extDatabase = NewDB(thisEnvironment)
+	thisEnvironment.SetEnvBindings()
 
 	// Init
 	log.Debug("Start golang extension: %s", thisEnvironment.source)
@@ -308,9 +314,9 @@ func (thisEnvironment *Environment) dispatchSchemaEvent(prioritizedSchemaHandler
 }
 
 // HandleEvent handles an event
-func (thisEnvironment *Environment) HandleEvent(event string, context map[string]interface{}) error {
+func (thisEnvironment *Environment) HandleEvent(event string, context map[string]interface{}, traceID string) error {
 	context["event_type"] = event
-
+	thisEnvironment.traceID = traceID
 	// dispatch to schema handlers
 	if schemaPrioritizedSchemaHandlers, ok := GlobSchemaHandlers[event]; ok {
 		if iSchemaID, ok := context["schema_id"]; ok {
@@ -366,7 +372,6 @@ func (thisEnvironment *Environment) updateContextFromResource(context goext.Cont
 	if _, ok := context["resource"].(map[string]interface{}); !ok {
 		return fmt.Errorf("failed to convert context resource to map during update context from resource")
 	}
-
 	if resourceMap, ok := thisEnvironment.resourceToMap(resource).(map[string]interface{}); ok {
 		for key, value := range resourceMap {
 			if _, ok := context["resource"].(map[string]interface{})[key]; ok {
@@ -376,7 +381,6 @@ func (thisEnvironment *Environment) updateContextFromResource(context goext.Cont
 	} else {
 		return fmt.Errorf("failed to convert resource to map during update context from resource")
 	}
-
 	return nil
 }
 
@@ -603,16 +607,9 @@ func (thisEnvironment *Environment) Reset() {
 
 // Clone makes a clone of the rawEnvironment
 func (thisEnvironment *Environment) Clone() extension.Environment {
-	return &Environment{
+	env := &Environment{
 		source:          thisEnvironment.source,
 		beforeStartInit: thisEnvironment.beforeStartInit,
-
-		// extension
-		extCore:     thisEnvironment.extCore,
-		extLogger:   thisEnvironment.extLogger,
-		extSchemas:  thisEnvironment.extSchemas,
-		extSync:     thisEnvironment.extSync,
-		extDatabase: thisEnvironment.extDatabase,
 
 		// internals
 		name:  thisEnvironment.name,
@@ -630,5 +627,9 @@ func (thisEnvironment *Environment) Clone() extension.Environment {
 
 		initFnRaw: thisEnvironment.initFnRaw,
 		initFns:   thisEnvironment.initFns,
+
+		traceID:	thisEnvironment.traceID,
 	}
+	env.SetEnvBindings()
+	return env
 }

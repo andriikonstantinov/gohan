@@ -46,13 +46,14 @@ func (thisCore *Core) TriggerEvent(event string, context goext.Context) {
 		log.Panic("TriggerEvent: schema not found")
 	}
 
+	traceID := thisCore.environment.traceID
 	envManager := extension.GetManager()
-	envManager.HandleEventInAllEnvironments(context, event, schemaID)
+	envManager.HandleEventInAllEnvironments(context, event, schemaID, traceID)
 }
 
 // HandleEvent Causes the given event to be handled within the same environment
 func (thisCore *Core) HandleEvent(event string, context goext.Context) {
-	thisCore.environment.HandleEvent(event, context)
+	thisCore.environment.HandleEvent(event, context, thisCore.environment.traceID)
 }
 
 func (thisCore *Core) NewUUID() string {

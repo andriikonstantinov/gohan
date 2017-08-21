@@ -28,7 +28,7 @@ import (
 //Environment is a interface for extension environment
 type Environment interface {
 	LoadExtensionsForPath(extensions []*schema.Extension, timeLimit time.Duration, timeLimits []*schema.PathEventTimeLimit, path string) error
-	HandleEvent(event string, context map[string]interface{}) error
+	HandleEvent(event string, context map[string]interface{}, traceID string) error
 	Clone() Environment
 }
 
@@ -75,9 +75,9 @@ func (manager *Manager) GetEnvironment(schemaID string) (env Environment, ok boo
 	return
 }
 
-func (manager *Manager) HandleEventInAllEnvironments(context map[string]interface{}, event string, schemaId string) {
+func (manager *Manager) HandleEventInAllEnvironments(context map[string]interface{}, event string, schemaId string, traceID string) {
 	for name := range manager.environments {
-		HandleEvent(context, manager.environments[name], event, schemaId)
+		HandleEvent(context, manager.environments[name], event, schemaId, traceID)
 	}
 }
 
@@ -107,9 +107,9 @@ func measureExtensionTime(timeStarted time.Time, event string, schemaID string) 
 }
 
 //HandleEvent handles the event in the given environment
-func HandleEvent(context map[string]interface{}, environment Environment, event string, schemaID string) error {
+func HandleEvent(context map[string]interface{}, environment Environment, event string, schemaID string, traceID string) error {
 	defer measureExtensionTime(time.Now(), event, schemaID)
-	if err := environment.HandleEvent(event, context); err != nil {
+	if err := environment.HandleEvent(event, context, traceID); err != nil {
 		return err
 	}
 	exceptionInfoRaw, ok := context["exception"]
